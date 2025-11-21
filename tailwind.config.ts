@@ -47,16 +47,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        glow: {
+          primary: "hsl(var(--glow-primary))",
         },
+      },
+      boxShadow: {
+        'glow-sm': '0 0 10px rgba(0, 217, 255, 0.3)',
+        'glow-md': '0 0 20px rgba(0, 217, 255, 0.4)',
+        'glow-lg': '0 0 40px rgba(0, 217, 255, 0.5)',
       },
       borderRadius: {
         lg: "var(--radius)",
