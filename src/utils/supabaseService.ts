@@ -37,6 +37,6 @@ export const savePreferencesAndGetToken = async (
  */
 export const constructIcsUrl = (token: string): string => {
   // TODO: Replace PROJECT_REF with actual Supabase project reference
-  const PROJECT_REF = 'YOUR_PROJECT_REF';
+  const PROJECT_REF = 'sjidynrgfnvvgtjbkgii';
   return `https://${PROJECT_REF}.supabase.co/functions/v1/user-feed?token=${token}`;
 };
