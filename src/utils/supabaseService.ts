@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface EventPreference {
@@ -7,6 +7,10 @@ export interface EventPreference {
 }
 
 const PROJECT_REF = 'sjidynrgfnvvgtjbkgii';
+const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`;
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqaWR5bnJnZm52dmd0amJrZ2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NzIxMjgsImV4cCI6MjA3OTI0ODEyOH0.azfTRVn7PBBoQ4VGmNkkPnIz85hyIS2GS_1dXfIgFF0';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
  * Saves event preferences to Supabase and returns a user token
