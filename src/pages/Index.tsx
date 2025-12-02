@@ -149,11 +149,24 @@ const Index = () => {
         });
         setIsLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during sync:", error);
+      
+      // Show more specific error messages
+      let errorMessage = "Something went wrong. Please try again.";
+      if (error?.message) {
+        if (error.message.includes("Missing Supabase environment variables")) {
+          errorMessage = "Configuration error: Supabase credentials are missing. Please check your environment variables.";
+        } else if (error.message.includes("Failed to save preferences")) {
+          errorMessage = `Database error: ${error.message}`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Sync failed",
-        description: "Something went wrong. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsLoading(false);
