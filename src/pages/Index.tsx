@@ -1,24 +1,87 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Zap } from "lucide-react";
+import { Calendar, Zap, Copy, Check, Search } from "lucide-react";
 import { AmbientBackground } from "@/components/AmbientBackground";
 import { EventCard } from "@/components/EventCard";
 import { savePreferencesAndGetToken, constructIcsUrl } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-// Mock event data
+// Event topics data - IDs must match topic_id values in database exactly
 const EVENTS = [
-  { id: "bball", label: "Men's Basketball", icon: "🏀" },
-  { id: "fball", label: "Football", icon: "🏈" },
-  { id: "acad", label: "Academic Calendar", icon: "🎓" },
-  { id: "arts", label: "Arts & Theater", icon: "🎨" },
+  // Clubs
+  { id: "Thucydides Society for Military History Meetings", label: "Thucydides Society for Military History Meetings", icon: "📜" },
+  { id: "Women in Consulting Club Meetings", label: "Women in Consulting Club Meetings", icon: "💼" },
+  { id: "League of Astronomers Club Meetings", label: "League of Astronomers Club Meetings", icon: "🔭" },
+  { id: "National Society of Black Engineers Club Meetings", label: "National Society of Black Engineers Club Meetings", icon: "⚙️" },
+  { id: "Christians in Seattle Meetings", label: "Christians in Seattle Meetings", icon: "✝️" },
+  { id: "Music Listening Club Meetings", label: "Music Listening Club Meetings", icon: "🎵" },
+  { id: "Husky Wiffle Club Meeting", label: "Husky Wiffle Club Meeting", icon: "⚾" },
+  { id: "Historical Fencing Meetings", label: "Historical Fencing Meetings", icon: "⚔️" },
+  { id: "AIESEC Club Meetings", label: "AIESEC Club Meetings", icon: "🌍" },
+  { id: "Huskies for Liberty Club Meetings", label: "Huskies for Liberty Club Meetings", icon: "🗽" },
+  { id: "Huskies for Opportunities in Prison Education Club Meetings", label: "Huskies for Opportunities in Prison Education Club Meetings", icon: "📚" },
+  { id: "Indigenous Students of Latin America Club Meetings", label: "Indigenous Students of Latin America Club Meetings", icon: "🌎" },
+  { id: "Corporate Law & Business Association Club Meetings", label: "Corporate Law & Business Association Club Meetings", icon: "⚖️" },
+  { id: "Eco-Build Club Meetings", label: "Eco-Build Club Meetings", icon: "🌱" },
+  { id: "SEDS Club Meeting", label: "SEDS Club Meeting", icon: "🚀" },
+  { id: "UX club meetings", label: "UX club meetings", icon: "🎨" },
+  { id: "Spanish Club Meetings", label: "Spanish Club Meetings", icon: "🇪🇸" },
+  
+  // University Services
+  { id: "University District Neighborhood Farmers Market", label: "University District Neighborhood Farmers Market", icon: "🥬" },
+  { id: "Study Abroad Info Sessions", label: "Study Abroad Info Sessions", icon: "✈️" },
+  { id: "CLUE tutoring", label: "CLUE tutoring", icon: "📖" },
+  
+  // Sports
+  { id: "Basketball", label: "Basketball", icon: "🏀" },
+  
+  // IMA Classes
+  { id: "IMA Electro-Cycle", label: "IMA Electro-Cycle", icon: "🚴" },
+  { id: "IMA Krav Maga", label: "IMA Krav Maga", icon: "🥋" },
+  { id: "IMA HIIT", label: "IMA HIIT", icon: "💪" },
+  { id: "IMA Vinyasa Yoga", label: "IMA Vinyasa Yoga", icon: "🧘" },
+  { id: "IMA Strength Through Yoga", label: "IMA Strength Through Yoga", icon: "🧘‍♀️" },
+  { id: "IMA Pilates", label: "IMA Pilates", icon: "🤸" },
+  { id: "IMA Deep End H2O Cardio", label: "IMA Deep End H2O Cardio", icon: "🏊" },
+  { id: "IMA Intro to K-Pop Dance", label: "IMA Intro to K-Pop Dance", icon: "💃" },
+  { id: "IMA Sunrise Yoga", label: "IMA Sunrise Yoga", icon: "🌅" },
+  { id: "IMA Power Yoga", label: "IMA Power Yoga", icon: "🧘‍♂️" },
+  { id: "IMA Fight Fit", label: "IMA Fight Fit", icon: "🥊" },
+  { id: "IMA All-Levels Vinyasa", label: "IMA All-Levels Vinyasa", icon: "🧘" },
+  { id: "IMA Sunrise Cycle", label: "IMA Sunrise Cycle", icon: "🌄" },
+  { id: "IMA HIIT - Lydia", label: "IMA HIIT - Lydia", icon: "💪" },
+  { id: "IMA Intermediate Vinyasa Yoga", label: "IMA Intermediate Vinyasa Yoga", icon: "🧘" },
+  { id: "IMA Yoga Sculpt", label: "IMA Yoga Sculpt", icon: "💪" },
+  { id: "IMA Core Crush", label: "IMA Core Crush", icon: "🔥" },
+  { id: "IMA Restorative Yoga", label: "IMA Restorative Yoga", icon: "🕯️" },
+  { id: "IMA Dance Fitness & Choreography", label: "IMA Dance Fitness & Choreography", icon: "💃" },
+  { id: "IMA Shallow End H2O Cardio", label: "IMA Shallow End H2O Cardio", icon: "🏊‍♀️" },
+  { id: "IMA Cycle Conditioning", label: "IMA Cycle Conditioning", icon: "🚴‍♂️" },
+  { id: "IMA Sunset Yoga", label: "IMA Sunset Yoga", icon: "🌇" },
 ];
 
 const Index = () => {
   const [redirectUri, setRedirectUri] = useState<string | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [icsUrl, setIcsUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+
+  // Filter events based on search query
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return EVENTS;
+    }
+    const query = searchQuery.toLowerCase();
+    return EVENTS.filter((event) =>
+      event.label.toLowerCase().includes(query) ||
+      event.id.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
 
   // Check for redirect_uri parameter on load
   useEffect(() => {
@@ -58,31 +121,31 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // Call mock Supabase service
+      // Call Supabase service
       const token = await savePreferencesAndGetToken(Array.from(selectedEvents));
       
       // Construct ICS URL
-      const icsUrl = constructIcsUrl(token);
+      const generatedIcsUrl = constructIcsUrl(token);
+      setIcsUrl(generatedIcsUrl);
       
-      toast({
-        title: "Calendar synced! 🎉",
-        description: "Redirecting you back...",
-      });
-
-      // Redirect back with ICS URL
+      // Redirect back with ICS URL if redirect_uri is provided
       if (redirectUri) {
+        toast({
+          title: "Calendar synced! 🎉",
+          description: "Redirecting you back...",
+        });
+        
         const separator = redirectUri.includes("?") ? "&" : "?";
-        const finalUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(icsUrl)}`;
+        const finalUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(generatedIcsUrl)}`;
         
         setTimeout(() => {
           window.location.href = finalUrl;
         }, 1000);
       } else {
-        // Debug mode: show the ICS URL
-        console.log("Generated ICS URL:", icsUrl);
+        // Debug mode: show the ICS URL in the text field
         toast({
-          title: "Debug Mode",
-          description: `ICS URL: ${icsUrl}`,
+          title: "Calendar synced! 🎉",
+          description: "Your ICS URL is ready below.",
         });
         setIsLoading(false);
       }
@@ -140,29 +203,69 @@ const Index = () => {
           )}
         </motion.div>
 
-        {/* Event Selection Grid */}
+        {/* Search Bar */}
         <motion.div
-          className="grid gap-4 mb-8"
+          className="mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search events, clubs, or IMA classes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full bg-background/50 border-border"
+            />
+          </div>
+          {searchQuery && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Showing {filteredEvents.length} of {EVENTS.length} events
+            </p>
+          )}
+        </motion.div>
+
+        {/* Event Selection Grid - Scrollable Container */}
+        <motion.div
+          className="mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, staggerChildren: 0.1 }}
+          transition={{ delay: 0.2 }}
         >
-          {EVENTS.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-            >
-              <EventCard
-                id={event.id}
-                label={event.label}
-                icon={event.icon}
-                isSelected={selectedEvents.has(event.id)}
-                onToggle={toggleEvent}
-              />
-            </motion.div>
-          ))}
+          <div className="max-h-[600px] overflow-y-auto border border-border rounded-lg bg-background/30 backdrop-blur-sm p-4 scrollbar-visible">
+            <div className="grid gap-4 pr-2">
+              {filteredEvents.length === 0 ? (
+                <motion.div
+                  className="text-center py-12"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <p className="text-muted-foreground">
+                    No events found matching "{searchQuery}"
+                  </p>
+                </motion.div>
+              ) : (
+                filteredEvents.map((event, index) => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + index * 0.05 }}
+                  >
+                    <EventCard
+                      id={event.id}
+                      label={event.label}
+                      icon={event.icon}
+                      isSelected={selectedEvents.has(event.id)}
+                      onToggle={toggleEvent}
+                    />
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
         </motion.div>
 
         {/* Sync Button */}
@@ -225,6 +328,54 @@ const Index = () => {
             {selectedEvents.size} event{selectedEvents.size !== 1 ? "s" : ""} selected
           </p>
         </motion.div>
+
+        {/* ICS URL Display */}
+        {icsUrl && (
+          <motion.div
+            className="mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Your Calendar Feed URL
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={icsUrl}
+                readOnly
+                className="flex-1 font-mono text-sm bg-background/50 border-border"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <Button
+                variant="outline"
+                size="default"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(icsUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="shrink-0"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use this URL to subscribe to your calendar feed in any calendar application.
+            </p>
+          </motion.div>
+        )}
       </div>
     </div>
   );
