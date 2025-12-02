@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface EventPreference {
@@ -6,41 +6,7 @@ export interface EventPreference {
   label: string;
 }
 
-/**
- * Initialize Supabase client using environment variables
- */
-const getSupabaseClient = () => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY'
-    );
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-};
-
-/**
- * Extracts the project reference from the Supabase URL
- * @param supabaseUrl - The Supabase project URL
- * @returns The project reference string
- */
-const extractProjectRef = (supabaseUrl: string): string => {
-  try {
-    const url = new URL(supabaseUrl);
-    // Extract project ref from URL like: https://xxxxx.supabase.co
-    const hostname = url.hostname;
-    const match = hostname.match(/^([^.]+)\.supabase\.co$/);
-    if (!match || !match[1]) {
-      throw new Error('Invalid Supabase URL format');
-    }
-    return match[1];
-  } catch (error) {
-    throw new Error(`Failed to extract project reference from URL: ${error}`);
-  }
-};
+const PROJECT_REF = 'sjidynrgfnvvgtjbkgii';
 
 /**
  * Saves event preferences to Supabase and returns a user token
@@ -54,8 +20,6 @@ export const savePreferencesAndGetToken = async (
     throw new Error('No event IDs provided');
   }
 
-  const supabase = getSupabaseClient();
-  
   // Generate a unique UUID for the user token
   const userToken = uuidv4();
 
@@ -87,18 +51,5 @@ export const savePreferencesAndGetToken = async (
  * @returns Full ICS URL
  */
 export const constructIcsUrl = (token: string): string => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL is not set');
-  }
-  
-  if (!supabaseAnonKey) {
-    throw new Error('VITE_SUPABASE_ANON_KEY is not set');
-  }
-
-  const projectRef = extractProjectRef(supabaseUrl);
-  // Provide prettified .ics URL for calendar clients (token embedded in path)
-  return `https://${projectRef}.supabase.co/functions/v1/user-feed/${token}.ics`;
+  return `https://${PROJECT_REF}.supabase.co/functions/v1/user-feed/${token}.ics`;
 };
