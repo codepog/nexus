@@ -187,20 +187,6 @@ const Index = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Select the university events you want to follow and sync them to your calendar.
           </p>
-
-          {/* Debug indicator */}
-          {!redirectUri && (
-            <motion.div
-              className="mt-6 inline-block px-4 py-2 rounded-lg bg-muted/50 border border-border"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <p className="text-sm text-muted-foreground">
-                Debug Mode: No redirect_uri found
-              </p>
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Search Bar */}
