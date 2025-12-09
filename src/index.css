@@ -8,45 +8,45 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Deep Dark Mode - Premium SaaS Aesthetic */
-    --background: 0 0% 2%;
+    /* Deep Purple/Black Background */
+    --background: 270 40% 8%;
     --foreground: 0 0% 98%;
 
     /* Glassmorphic Cards */
-    --card: 0 0% 5%;
+    --card: 270 35% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 5%;
+    --popover: 270 35% 12%;
     --popover-foreground: 0 0% 98%;
 
-    /* Vibrant Cyan Accent */
-    --primary: 190 100% 50%;
-    --primary-foreground: 0 0% 2%;
+    /* Vibrant Purple/Lavender Accent */
+    --primary: 270 80% 65%;
+    --primary-foreground: 0 0% 98%;
 
     /* Subtle Secondary */
-    --secondary: 0 0% 10%;
+    --secondary: 270 30% 15%;
     --secondary-foreground: 0 0% 98%;
 
     /* Muted Elements */
-    --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 270 25% 12%;
+    --muted-foreground: 0 0% 70%;
 
     /* Accent Glow */
-    --accent: 190 100% 50%;
-    --accent-foreground: 0 0% 2%;
+    --accent: 270 80% 65%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
     /* Glassmorphic Borders */
-    --border: 0 0% 15%;
-    --input: 0 0% 10%;
-    --ring: 190 100% 50%;
+    --border: 270 30% 20%;
+    --input: 270 30% 15%;
+    --ring: 270 80% 65%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Glow Effects */
-    --glow-primary: 190 100% 50%;
+    --glow-primary: 270 80% 65%;
     --glow-intensity: 0.6;
   }
 }

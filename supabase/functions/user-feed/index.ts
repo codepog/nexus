@@ -69,6 +69,180 @@ function escapeICSText(text: string): string {
 }
 
 /**
+ * Parses an ICS file string and converts it to CalendarEvent array
+ */
+function parseICS(icsText: string, sourceName: string): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
+  
+  // Normalize line endings (handle both \r\n and \n)
+  const normalizedText = icsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // Split by VEVENT blocks - handle both \n and \r\n line endings
+  const veventMatches = normalizedText.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
+  if (!veventMatches || veventMatches.length === 0) {
+    console.warn(`No VEVENT blocks found in ICS for ${sourceName}`);
+    return events;
+  }
+
+  console.log(`Found ${veventMatches.length} VEVENT blocks in ${sourceName}`);
+
+  for (let i = 0; i < veventMatches.length; i++) {
+    const veventBlock = veventMatches[i];
+    try {
+      const event: Partial<CalendarEvent> = {
+        topic_id: `major:${sourceName}`,
+        time_tbd: false,
+      };
+
+      // Extract UID - handle multiline and parameters
+      const uidMatch = veventBlock.match(/UID(?:;.*?)?[:\s]+([^\r\n]+)/i);
+      if (uidMatch) {
+        event.id = uidMatch[1].trim();
+      } else {
+        // Generate a unique ID if not found
+        event.id = `${sourceName}-${i}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      // Extract SUMMARY (title) - handle multiline and parameters
+      const summaryMatch = veventBlock.match(/SUMMARY(?:;.*?)?[:\s]+([^\r\n]+)/i);
+      if (summaryMatch) {
+        event.title = unescapeICSText(summaryMatch[1].trim());
+      } else {
+        event.title = `Event from ${sourceName}`;
+      }
+
+      // Extract DESCRIPTION - handle multiline
+      const descMatch = veventBlock.match(/DESCRIPTION(?:;.*?)?[:\s]+([^\r\n]+)/i);
+      if (descMatch) {
+        event.description = unescapeICSText(descMatch[1].trim());
+      }
+
+      // Extract LOCATION
+      const locationMatch = veventBlock.match(/LOCATION(?:;.*?)?[:\s]+([^\r\n]+)/i);
+      if (locationMatch) {
+        event.location = unescapeICSText(locationMatch[1].trim());
+      }
+
+      // Extract DTSTART - handle VALUE=DATE parameter and timezone
+      const dtstartMatch = veventBlock.match(/DTSTART(?:;VALUE=DATE)?(?:;TZID=[^:]+)?[:\s]+([^\r\n]+)/i);
+      if (dtstartMatch) {
+        const dtstartStr = dtstartMatch[1].trim();
+        const startDate = parseICSDate(dtstartStr);
+        if (startDate) {
+          // Check if it's a DATE-only format (YYYYMMDD)
+          if (dtstartStr.length === 8 && !dtstartStr.includes('T')) {
+            event.event_date = formatDateOnly(startDate);
+            event.time_tbd = true;
+          } else {
+            event.start_time = startDate.toISOString();
+          }
+        } else {
+          console.warn(`Failed to parse DTSTART for event ${i} in ${sourceName}: ${dtstartStr}`);
+        }
+      } else {
+        console.warn(`No DTSTART found for event ${i} in ${sourceName}`);
+      }
+
+      // Extract DTEND - handle VALUE=DATE parameter and timezone
+      const dtendMatch = veventBlock.match(/DTEND(?:;VALUE=DATE)?(?:;TZID=[^:]+)?[:\s]+([^\r\n]+)/i);
+      if (dtendMatch) {
+        const dtendStr = dtendMatch[1].trim();
+        const endDate = parseICSDate(dtendStr);
+        if (endDate && !event.time_tbd) {
+          event.end_time = endDate.toISOString();
+        }
+      }
+
+      // Only add event if it has at least a start time or date
+      if (event.start_time || event.event_date) {
+        events.push(event as CalendarEvent);
+      } else {
+        console.warn(`Skipping event ${i} in ${sourceName} - no valid start time or date`);
+      }
+    } catch (error) {
+      console.error(`Error parsing VEVENT block ${i} in ${sourceName}:`, error);
+      console.error(`Block preview: ${veventBlock.substring(0, 200)}`);
+    }
+  }
+
+  return events;
+}
+
+/**
+ * Unescapes ICS text (reverses escapeICSText)
+ */
+function unescapeICSText(text: string): string {
+  return text
+    .replace(/\\n/g, "\n")
+    .replace(/\\,/g, ",")
+    .replace(/\\;/g, ";")
+    .replace(/\\\\/g, "\\");
+}
+
+/**
+ * Parses an ICS date string (YYYYMMDDTHHMMSSZ or YYYYMMDD)
+ * Handles various formats including with/without timezone
+ */
+function parseICSDate(dateStr: string): Date | null {
+  try {
+    // Remove any whitespace
+    dateStr = dateStr.trim();
+    
+    // Handle DATE format (YYYYMMDD)
+    if (dateStr.length === 8 && /^\d{8}$/.test(dateStr)) {
+      const year = parseInt(dateStr.substring(0, 4));
+      const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-indexed
+      const day = parseInt(dateStr.substring(6, 8));
+      const date = new Date(Date.UTC(year, month, day));
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date: ${dateStr}`);
+        return null;
+      }
+      return date;
+    }
+    
+    // Handle DATE-TIME format (YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS)
+    // Can be 15 chars (YYYYMMDDTHHMMSS) or 16 chars (YYYYMMDDTHHMMSSZ)
+    if (dateStr.length >= 15 && dateStr.includes('T')) {
+      const year = parseInt(dateStr.substring(0, 4));
+      const month = parseInt(dateStr.substring(4, 6)) - 1;
+      const day = parseInt(dateStr.substring(6, 8));
+      const hours = parseInt(dateStr.substring(9, 11) || "0");
+      const minutes = parseInt(dateStr.substring(11, 13) || "0");
+      const seconds = parseInt(dateStr.substring(13, 15) || "0");
+      
+      // Check if it's UTC (ends with Z) or local time
+      const isUTC = dateStr.endsWith('Z') || dateStr.length === 16;
+      const date = isUTC 
+        ? new Date(Date.UTC(year, month, day, hours, minutes, seconds))
+        : new Date(year, month, day, hours, minutes, seconds);
+      
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid datetime: ${dateStr}`);
+        return null;
+      }
+      return date;
+    }
+    
+    console.warn(`Unrecognized date format: ${dateStr} (length: ${dateStr.length})`);
+    return null;
+  } catch (error) {
+    console.error("Error parsing ICS date:", dateStr, error);
+    return null;
+  }
+}
+
+/**
+ * Formats a date to YYYY-MM-DD format
+ */
+function formatDateOnly(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Generates ICS content from calendar events
  */
 function generateICS(events: CalendarEvent[]): string {
@@ -218,7 +392,8 @@ serve(async (req) => {
     const { data: preferences, error: prefError } = await supabase
       .from("feed_preferences")
       .select("topic_id")
-      .eq("user_token", token);
+      .eq("user_token", token)
+      .single(); // Get single row since we now store array in one row
 
     if (prefError) {
       console.error("Error fetching preferences:", prefError);
@@ -231,7 +406,7 @@ serve(async (req) => {
       );
     }
 
-    if (!preferences || preferences.length === 0) {
+    if (!preferences || !preferences.topic_id) {
       return new Response(
         JSON.stringify({ error: "No preferences found for this token" }),
         {
@@ -241,36 +416,123 @@ serve(async (req) => {
       );
     }
 
-    // Extract topic IDs
-    const topicIds = preferences.map((p) => p.topic_id);
-    console.log("Looking for events with topic_ids:", topicIds);
+    // topic_id is now an array, so we can use it directly
+    // Handle both array format and single value (for backwards compatibility)
+    const topicIdArray = Array.isArray(preferences.topic_id) 
+      ? preferences.topic_id 
+      : [preferences.topic_id];
 
-    // Fetch calendar events for these topics from the events table
-    const { data: events, error: eventsError } = await supabase
-      .from("events")
-      .select("*")
-      .in("topic_id", topicIds);
+    // Separate regular topic IDs from major selections
+    const topicIds: string[] = [];
+    const majorNames: string[] = [];
+    
+    for (const topicId of topicIdArray) {
+      if (topicId.startsWith("major:")) {
+        // Extract major name (remove "major:" prefix)
+        const majorName = topicId.replace(/^major:/, "");
+        majorNames.push(majorName);
+      } else {
+        topicIds.push(topicId);
+      }
+    }
+
+    console.log("Looking for events with topic_ids:", topicIds);
+    console.log("Looking for majors:", majorNames);
+
+    // Fetch calendar events for regular topics from the events table
+    let events: CalendarEvent[] = [];
+    if (topicIds.length > 0) {
+      const { data: dbEvents, error: eventsError } = await supabase
+        .from("events")
+        .select("*")
+        .in("topic_id", topicIds);
+      
+      if (eventsError) {
+        console.error("Error fetching events:", eventsError);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch calendar events" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      events = dbEvents || [];
+      console.log(`Found ${events.length} events for ${topicIds.length} topics`);
+    }
+
+    // Fetch and parse ICS files for selected majors
+    if (majorNames.length > 0) {
+      // Get major URLs from the majors table
+      const { data: majorsData, error: majorsError } = await supabase
+        .from("majors")
+        .select("name, url")
+        .in("name", majorNames);
+
+      if (majorsError) {
+        console.error("Error fetching majors:", majorsError);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch major information" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Fetch and parse ICS files for each major
+      const majorEventsPromises = (majorsData || []).map(async (major) => {
+        try {
+          console.log(`Fetching ICS from: ${major.url} for ${major.name}`);
+          const icsResponse = await fetch(major.url, {
+            headers: {
+              'User-Agent': 'Nexus-Sync/1.0',
+            },
+          });
+          
+          if (!icsResponse.ok) {
+            console.error(`Failed to fetch ICS for ${major.name}: HTTP ${icsResponse.status} ${icsResponse.statusText}`);
+            return [];
+          }
+          
+          const icsText = await icsResponse.text();
+          console.log(`Fetched ${icsText.length} characters from ${major.name}`);
+          
+          if (!icsText || icsText.trim().length === 0) {
+            console.warn(`Empty ICS file for ${major.name}`);
+            return [];
+          }
+          
+          const parsedEvents = parseICS(icsText, major.name);
+          console.log(`Parsed ${parsedEvents.length} events from ${major.name}`);
+          
+          if (parsedEvents.length === 0) {
+            console.warn(`No events parsed from ${major.name}. ICS file might be empty or in an unsupported format.`);
+            console.warn(`First 500 chars of ICS: ${icsText.substring(0, 500)}`);
+          }
+          
+          return parsedEvents;
+        } catch (error) {
+          console.error(`Error fetching/parsing ICS for ${major.name}:`, error);
+          console.error(`Error details:`, error instanceof Error ? error.message : String(error));
+          return [];
+        }
+      });
+
+      const majorEventsArrays = await Promise.all(majorEventsPromises);
+      const majorEvents = majorEventsArrays.flat();
+      events = [...events, ...majorEvents];
+      console.log(`Added ${majorEvents.length} events from ${majorNames.length} majors`);
+    }
     
     // Sort events manually to handle NULL start_time values
-    const sortedEvents = (events || []).sort((a, b) => {
+    const sortedEvents = events.sort((a, b) => {
       if (!a.start_time && !b.start_time) return 0;
       if (!a.start_time) return 1; // NULLs go to end
       if (!b.start_time) return -1;
       return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
     });
-    
-    console.log(`Found ${sortedEvents.length} events for ${topicIds.length} topics`);
-
-    if (eventsError) {
-      console.error("Error fetching events:", eventsError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch calendar events" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
 
     // Generate ICS content
     const icsContent = generateICS(sortedEvents);

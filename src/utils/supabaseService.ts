@@ -6,6 +6,11 @@ export interface EventPreference {
   label: string;
 }
 
+export interface Major {
+  name: string;
+  url: string;
+}
+
 /**
  * Initialize Supabase client using environment variables
  */
@@ -20,6 +25,76 @@ const getSupabaseClient = () => {
   }
 
   return createClient(supabaseUrl, supabaseAnonKey);
+};
+
+/**
+ * Fetches all majors from the majors table
+ * @returns Promise resolving to an array of majors
+ */
+export const fetchMajors = async (): Promise<Major[]> => {
+  try {
+    const supabase = getSupabaseClient();
+    
+    console.log('Fetching majors from Supabase...');
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+    
+    // Try different table name variations in case of schema issues
+    let { data, error, status, statusText } = await supabase
+      .from('majors')
+      .select('name, url')
+      .order('name');
+
+    // If that fails, try with schema prefix
+    if (error && error.code === 'PGRST116') {
+      console.log('Trying with public schema prefix...');
+      const result = await supabase
+        .from('public.majors')
+        .select('name, url')
+        .order('name');
+      data = result.data;
+      error = result.error;
+      status = result.status;
+      statusText = result.statusText;
+    }
+
+    console.log('Supabase response:', { data, error, status, statusText });
+    console.log('Data type:', typeof data, 'Is array?', Array.isArray(data));
+    console.log('Data length:', data?.length);
+
+    if (error) {
+      console.error('Error fetching majors from Supabase:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      // Check if table doesn't exist
+      if (error.code === 'PGRST116' || error.message.includes('does not exist') || (error.message.includes('relation') && error.message.includes('does not exist'))) {
+        throw new Error('Majors table does not exist. Please create it in Supabase with columns: name (text), url (text)');
+      }
+      // Check if RLS is blocking access
+      if (error.code === '42501' || error.code === 'PGRST301' || error.message.includes('permission denied') || error.message.includes('new row violates row-level security')) {
+        throw new Error('Permission denied. Please create a RLS policy: CREATE POLICY "Allow public read access" ON majors FOR SELECT TO public USING (true);');
+      }
+      throw new Error(`Failed to fetch majors: ${error.message} (Code: ${error.code})`);
+    }
+
+    // If we got a successful response but no data, it might be RLS filtering
+    if (status === 200 && (!data || data.length === 0)) {
+      console.warn('Query succeeded but returned no data. This could mean:');
+      console.warn('1. The table is empty');
+      console.warn('2. RLS policies are filtering out all rows');
+      console.warn('3. Check RLS policies in Supabase Dashboard → Authentication → Policies');
+    }
+
+    console.log(`Successfully fetched ${data?.length || 0} majors:`, data);
+    return data || [];
+  } catch (error: any) {
+    console.error('fetchMajors error:', error);
+    throw error;
+  }
 };
 
 /**
@@ -59,16 +134,14 @@ export const savePreferencesAndGetToken = async (
   // Generate a unique UUID for the user token
   const userToken = uuidv4();
 
-  // Prepare rows for batch insert
-  const rows = selectedEventIds.map((topicId) => ({
-    user_token: userToken,
-    topic_id: topicId,
-  }));
-
-  // Insert all preferences in a single batch operation
+  // Insert a single row with topic_id as an array
+  // PostgreSQL array format: {topic1, topic2, topic3}
   const { data, error } = await supabase
     .from('feed_preferences')
-    .insert(rows);
+    .insert({
+      user_token: userToken,
+      topic_id: selectedEventIds, // Supabase will handle array conversion
+    });
 
   if (error) {
     console.error('Error saving preferences to Supabase:', error);
