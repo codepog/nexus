@@ -44,7 +44,7 @@ export default async (req, res) => {
       : [];
     
     // 3. Check if ICS URL is provided directly (for backward compatibility)
-    const providedIcsUrl = req.query['ics-url'];
+    const providedIcsUrl = req.query['ics_url'] || req.query['ics-url'];
   
     // Basic validation
     if (!redirectUrl) {
@@ -65,7 +65,7 @@ export default async (req, res) => {
       if (topicIds.length === 0 && majorIds.length === 0) {
         res.status(400).json({ 
           error: 'Missing preferences',
-          message: 'Either provide an ics-url parameter, or provide topic_ids and/or major_ids to generate an ICS link'
+          message: 'Either provide an ics_url parameter, or provide topic_ids and/or major_ids to generate an ICS link'
         });
         return;
       }
@@ -140,7 +140,7 @@ export default async (req, res) => {
 
     // 7. Construct the final URL with ICS URL appended
     const separator = redirectUrl.includes('?') ? '&' : '?';
-    const finalUrl = `${redirectUrl}${separator}ics-url=${encodeURIComponent(icsUrl)}`;
+    const finalUrl = `${redirectUrl}${separator}ics_url=${encodeURIComponent(icsUrl)}`;
     
     // 8. Perform the 302 redirect
     res.writeHead(302, {

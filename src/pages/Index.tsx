@@ -183,12 +183,12 @@ const Index = () => {
     return filtered;
   }, [majors, searchQuery, selectedCategory, selectedEvents]);
 
-  // Check for redirect-url, redirect_uri, and ics-url parameters on load
+  // Check for redirect-url, redirect_uri, and ics_url parameters on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // Check for redirect-url first (new format), then redirect_uri (backward compatibility)
     const uri = params.get("redirect-url") || params.get("redirect_uri");
-    const icsUrlParam = params.get("ics-url");
+    const icsUrlParam = params.get("ics_url");
     
     console.log("URL Parameters:", { uri, icsUrlParam, allParams: Object.fromEntries(params) });
     
@@ -199,7 +199,7 @@ const Index = () => {
       console.log("Debug Mode: No redirect-url or redirect_uri found in URL");
     }
 
-    // If ics-url is provided, extract token and load existing preferences
+    // If ics_url is provided, extract token and load existing preferences
     if (icsUrlParam) {
       console.log("ICS URL parameter found:", icsUrlParam);
       setIcsUrl(icsUrlParam);
@@ -331,7 +331,7 @@ const Index = () => {
         
         // Construct the final redirect URL with ICS URL appended
         const separator = redirectUri.includes('?') ? '&' : '?';
-        const finalRedirectUrl = `${redirectUri}${separator}ics-url=${encodeURIComponent(finalIcsUrl)}`;
+        const finalRedirectUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
           window.location.href = finalRedirectUrl;
