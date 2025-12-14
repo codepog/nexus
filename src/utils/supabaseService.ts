@@ -377,8 +377,9 @@ export const savePreferencesAndGetToken = async (
   selectedEventIds: string[],
   existingToken?: string | null
 ): Promise<string> => {
-  if (!selectedEventIds || selectedEventIds.length === 0) {
-    throw new Error('No event IDs provided');
+  // Allow empty arrays - user can have no preferences
+  if (!selectedEventIds) {
+    selectedEventIds = [];
   }
 
   const supabase = getSupabaseClient();
@@ -393,7 +394,7 @@ export const savePreferencesAndGetToken = async (
     const { data: updateData, error } = await supabase
       .from('feed_preferences')
       .update({
-        topic_id: selectedEventIds,
+        topic_id: selectedEventIds.length > 0 ? selectedEventIds : null,
       })
       .eq('user_token', existingToken)
       .select();
@@ -424,13 +425,13 @@ export const savePreferencesAndGetToken = async (
   // Otherwise, create new preferences
   const userToken = uuidv4();
 
-  // Insert a single row with topic_id as an array
+  // Insert a single row with topic_id as an array (or null if empty)
   // PostgreSQL array format: {topic1, topic2, topic3}
   const { data, error } = await supabase
     .from('feed_preferences')
     .insert({
       user_token: userToken,
-      topic_id: selectedEventIds, // Supabase will handle array conversion
+      topic_id: selectedEventIds.length > 0 ? selectedEventIds : null, // Use null for empty preferences
     });
 
   if (error) {
