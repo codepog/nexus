@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Copy, Check } from "lucide-react";
-import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, type Major } from "@/utils/supabaseService";
+import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, extractTokenFromIcsUrl, fetchPreferencesByToken, type Major } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,8 @@ const Index = () => {
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [icsUrl, setIcsUrl] = useState<string | null>(null);
+  const [existingToken, setExistingToken] = useState<string | null>(null);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
@@ -181,11 +183,14 @@ const Index = () => {
     return filtered;
   }, [majors, searchQuery, selectedCategory, selectedEvents]);
 
-  // Check for redirect-url or redirect_uri parameter on load
+  // Check for redirect-url, redirect_uri, and ics-url parameters on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // Check for redirect-url first (new format), then redirect_uri (backward compatibility)
     const uri = params.get("redirect-url") || params.get("redirect_uri");
+    const icsUrlParam = params.get("ics-url");
+    
+    console.log("URL Parameters:", { uri, icsUrlParam, allParams: Object.fromEntries(params) });
     
     if (uri) {
       setRedirectUri(uri);
@@ -193,7 +198,72 @@ const Index = () => {
     } else {
       console.log("Debug Mode: No redirect-url or redirect_uri found in URL");
     }
-  }, []);
+
+    // If ics-url is provided, extract token and load existing preferences
+    if (icsUrlParam) {
+      console.log("ICS URL parameter found:", icsUrlParam);
+      setIcsUrl(icsUrlParam);
+      const token = extractTokenFromIcsUrl(icsUrlParam);
+      
+      console.log("Extracted token:", token);
+      
+      if (token) {
+        setExistingToken(token);
+        setIsLoadingPreferences(true);
+        
+        console.log("Fetching preferences for token:", token);
+        console.log("Token length:", token.length);
+        console.log("Token format check (UUID):", /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(token));
+        
+        // Fetch existing preferences
+        fetchPreferencesByToken(token)
+          .then((topicIds) => {
+            console.log("Fetched topicIds:", topicIds);
+            console.log("topicIds type:", typeof topicIds);
+            console.log("topicIds is array?", Array.isArray(topicIds));
+            console.log("topicIds length:", topicIds?.length);
+            
+            if (topicIds && topicIds.length > 0) {
+              console.log("Setting selected events to:", Array.from(new Set(topicIds)));
+              setSelectedEvents(new Set(topicIds));
+              console.log("Loaded existing preferences:", topicIds);
+              toast({
+                title: "Preferences loaded",
+                description: `Found ${topicIds.length} existing event${topicIds.length > 1 ? 's' : ''}. Update your selections below.`,
+              });
+            } else {
+              console.log("No existing preferences found for token - topicIds is:", topicIds);
+              console.log("This could mean:");
+              console.log("1. No row exists with this token");
+              console.log("2. The topic_id column is empty/null");
+              console.log("3. The topic_id array is empty");
+              toast({
+                title: "No preferences found",
+                description: "Starting with a fresh selection. Check console for details.",
+              });
+            }
+            setIsLoadingPreferences(false);
+          })
+          .catch((error) => {
+            console.error("Error loading preferences:", error);
+            console.error("Error stack:", error.stack);
+            setIsLoadingPreferences(false);
+            toast({
+              title: "Could not load preferences",
+              description: error.message || "Starting with a fresh selection.",
+              variant: "destructive",
+            });
+          });
+      } else {
+        console.warn("Could not extract token from ICS URL:", icsUrlParam);
+        toast({
+          title: "Invalid ICS URL",
+          description: "Could not extract token from the provided ICS URL.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [toast]);
 
   const toggleEvent = (eventId: string) => {
     setSelectedEvents((prev) => {
@@ -236,23 +306,32 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // Call Supabase service
-      const token = await savePreferencesAndGetToken(Array.from(selectedEvents));
+      // Call Supabase service - use existing token if updating, otherwise create new
+      const token = await savePreferencesAndGetToken(Array.from(selectedEvents), existingToken);
       
-      // Construct ICS URL
-      const generatedIcsUrl = constructIcsUrl(token);
-      setIcsUrl(generatedIcsUrl);
+      // If updating existing preferences, keep the same ICS URL
+      // Otherwise, construct a new ICS URL
+      let finalIcsUrl: string;
+      if (existingToken && icsUrl) {
+        // Keep the same ICS URL when updating
+        finalIcsUrl = icsUrl;
+        console.log("Keeping existing ICS URL:", finalIcsUrl);
+      } else {
+        // Generate new ICS URL for new preferences
+        finalIcsUrl = constructIcsUrl(token);
+        setIcsUrl(finalIcsUrl);
+      }
       
       // Redirect directly to the external URL with ICS URL appended if redirect_uri is provided
       if (redirectUri) {
         toast({
-          title: "Calendar synced! 🎉",
+          title: existingToken ? "Preferences updated! 🎉" : "Calendar synced! 🎉",
           description: "Redirecting you back...",
         });
         
         // Construct the final redirect URL with ICS URL appended
         const separator = redirectUri.includes('?') ? '&' : '?';
-        const finalRedirectUrl = `${redirectUri}${separator}ics-url=${encodeURIComponent(generatedIcsUrl)}`;
+        const finalRedirectUrl = `${redirectUri}${separator}ics-url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
           window.location.href = finalRedirectUrl;
@@ -260,7 +339,7 @@ const Index = () => {
       } else {
         // Debug mode: show the ICS URL in the text field
         toast({
-          title: "Calendar synced! 🎉",
+          title: existingToken ? "Preferences updated! 🎉" : "Calendar synced! 🎉",
           description: "Your ICS URL is ready below.",
         });
         setIsLoading(false);
