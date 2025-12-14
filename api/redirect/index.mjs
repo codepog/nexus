@@ -61,54 +61,50 @@ export default async (req, res) => {
     if (providedIcsUrl) {
       icsUrl = providedIcsUrl;
     } else {
-      // Otherwise, create the ICS link from preferences
+      // If no preferences are provided, set ics_url to empty string
       if (topicIds.length === 0 && majorIds.length === 0) {
-        res.status(400).json({ 
-          error: 'Missing preferences',
-          message: 'Either provide an ics_url parameter, or provide topic_ids and/or major_ids to generate an ICS link'
-        });
-        return;
-      }
+        icsUrl = '';
+      } else {
+        // Get Supabase credentials from environment variables
+        const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+        const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
-      // Get Supabase credentials from environment variables
-      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-      const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        res.status(500).json({ 
-          error: 'Missing Supabase configuration',
-          message: 'Supabase URL and anon key must be set in environment variables'
-        });
-        return;
-      }
-
-      // Initialize Supabase client
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-      // Generate a unique UUID for the user token
-      const userToken = uuidv4();
-
-      // Save preferences to Supabase (only if topic_ids are provided)
-      if (topicIds.length > 0) {
-        const { error: insertError } = await supabase
-          .from('feed_preferences')
-          .insert({
-            user_token: userToken,
-            topic_id: topicIds,
-          });
-
-        if (insertError) {
-          console.error('Error saving preferences to Supabase:', insertError);
+        if (!supabaseUrl || !supabaseAnonKey) {
           res.status(500).json({ 
-            error: 'Failed to save preferences',
-            message: insertError.message 
+            error: 'Missing Supabase configuration',
+            message: 'Supabase URL and anon key must be set in environment variables'
           });
           return;
         }
-      }
 
-      // Construct the ICS URL
-      icsUrl = constructIcsUrl(userToken, supabaseUrl);
+        // Initialize Supabase client
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+        // Generate a unique UUID for the user token
+        const userToken = uuidv4();
+
+        // Save preferences to Supabase (only if topic_ids are provided)
+        if (topicIds.length > 0) {
+          const { error: insertError } = await supabase
+            .from('feed_preferences')
+            .insert({
+              user_token: userToken,
+              topic_id: topicIds,
+            });
+
+          if (insertError) {
+            console.error('Error saving preferences to Supabase:', insertError);
+            res.status(500).json({ 
+              error: 'Failed to save preferences',
+              message: insertError.message 
+            });
+            return;
+          }
+        }
+
+        // Construct the ICS URL
+        icsUrl = constructIcsUrl(userToken, supabaseUrl);
+      }
     }
 
     // 4. Decode URL-encoded redirect-url if needed
@@ -140,7 +136,8 @@ export default async (req, res) => {
 
     // 7. Construct the final URL with ICS URL appended
     const separator = redirectUrl.includes('?') ? '&' : '?';
-    const finalUrl = `${redirectUrl}${separator}ics_url=${encodeURIComponent(icsUrl)}`;
+    // If icsUrl is empty, still include the parameter but with empty value
+    const finalUrl = `${redirectUrl}${separator}ics_url=${icsUrl ? encodeURIComponent(icsUrl) : ''}`;
     
     // 8. Perform the 302 redirect
     res.writeHead(302, {

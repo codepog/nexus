@@ -297,6 +297,37 @@ const Index = () => {
     setIsLoading(true);
 
     try {
+      // If no preferences are selected, pass ics_url with empty value
+      if (selectedEvents.size === 0) {
+        console.log("No preferences selected. Redirect URI:", redirectUri);
+        if (redirectUri) {
+          toast({
+            title: "Redirecting...",
+            description: "No preferences selected.",
+          });
+          
+          // Construct the final redirect URL with empty ics_url parameter
+          const separator = redirectUri.includes('?') ? '&' : '?';
+          const finalRedirectUrl = `${redirectUri}${separator}ics_url=`;
+          
+          console.log("Redirecting to:", finalRedirectUrl);
+          
+          setTimeout(() => {
+            window.location.href = finalRedirectUrl;
+          }, 1000);
+          return;
+        } else {
+          // Debug mode: no redirect URI, so just show informational message
+          console.log("No redirect URI found, cannot redirect");
+          toast({
+            title: "No preferences selected",
+            description: "In production with a redirect URL, this would redirect with ics_url= parameter.",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Call Supabase service - use existing token if updating, otherwise create new
       const token = await savePreferencesAndGetToken(Array.from(selectedEvents), existingToken);
       
