@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Search, X } from "lucide-react";
 import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, extractTokenFromIcsUrl, fetchPreferencesByToken, type Major } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -141,21 +141,13 @@ const Index = () => {
       );
     }
 
-    // Sort: selected events first, then unselected
-    filtered.sort((a, b) => {
-      const aSelected = selectedEvents.has(a.id);
-      const bSelected = selectedEvents.has(b.id);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
-
     return filtered;
   }, [searchQuery, selectedCategory, selectedEvents]);
 
   // Filter majors based on search query, with selected items at top
   const filteredMajors = useMemo(() => {
-    if (selectedCategory !== "majors") {
+    // Show majors when "all" or "majors" is selected
+    if (selectedCategory !== "majors" && selectedCategory !== "all") {
       return [];
     }
 
@@ -169,19 +161,57 @@ const Index = () => {
       );
     }
 
-    // Sort: selected majors first, then unselected
-    filtered.sort((a, b) => {
-      const aId = `major:${a.name}`;
-      const bId = `major:${b.name}`;
-      const aSelected = selectedEvents.has(aId);
-      const bSelected = selectedEvents.has(bId);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
-
     return filtered;
   }, [majors, searchQuery, selectedCategory, selectedEvents]);
+
+  // Helper function to get grouping/detail for events
+  const getEventGrouping = (event: Event | Major, isMajor: boolean): string => {
+    if (isMajor) {
+      return "Department";
+    }
+    const evt = event as Event;
+    if (evt.category === "sports") return "Sports";
+    if (evt.category === "clubs") return "Clubs";
+    return "Other";
+  };
+
+  // Combined and alphabetically sorted list for "all" category
+  const allItemsSorted = useMemo(() => {
+    if (selectedCategory !== "all") {
+      return [];
+    }
+
+    // Combine majors and events into a single array with a common structure
+    const items: Array<{
+      id: string;
+      label: string;
+      grouping: string;
+      isMajor: boolean;
+    }> = [];
+
+    // Add majors
+    filteredMajors.forEach((major) => {
+      items.push({
+        id: `major:${major.name}`,
+        label: major.name,
+        grouping: "Department",
+        isMajor: true,
+      });
+    });
+
+    // Add regular events
+    filteredEvents.forEach((event) => {
+      items.push({
+        id: event.id,
+        label: event.label,
+        grouping: getEventGrouping(event, false),
+        isMajor: false,
+      });
+    });
+
+    // Sort alphabetically by label
+    return items.sort((a, b) => a.label.localeCompare(b.label));
+  }, [filteredMajors, filteredEvents, selectedCategory]);
 
   // Check for redirect-url, redirect_uri, and ics_url parameters on load
   useEffect(() => {
@@ -282,17 +312,6 @@ const Index = () => {
     toggleEvent(majorId);
   };
 
-  // Helper function to get grouping/detail for events
-  const getEventGrouping = (event: Event | Major, isMajor: boolean): string => {
-    if (isMajor) {
-      return "Department";
-    }
-    const evt = event as Event;
-    if (evt.category === "sports") return "Sports";
-    if (evt.category === "clubs") return "Clubs";
-    return "Other";
-  };
-
   const handleSync = async () => {
     setIsLoading(true);
 
@@ -391,8 +410,19 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="container max-w-5xl mx-auto px-6 py-12">
+    <div 
+      className="min-h-screen text-foreground relative"
+      style={{
+        backgroundImage: 'url(/uw-background.png)',
+        backgroundSize: 'auto',
+        backgroundPosition: 'top left',
+        backgroundRepeat: 'repeat',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      {/* Overlay for better text readability */}
+      <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]"></div>
+      <div className="container max-w-4xl mx-auto px-6 py-12 relative z-10">
         {/* Progress Bar/Accent at Top */}
         <motion.div
           className="w-24 h-2 bg-primary mx-auto mb-8 rounded-full"
@@ -440,11 +470,11 @@ const Index = () => {
               All
             </motion.button>
             <motion.button
-              onClick={() => setSelectedCategory("clubs")}
+              onClick={() => setSelectedCategory("majors")}
               className={`
                 px-6 py-2.5 rounded-lg font-medium text-sm transition-all
                 ${
-                  selectedCategory === "clubs"
+                  selectedCategory === "majors"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-[hsl(270_30%_15%)] text-foreground border border-border hover:bg-[hsl(270_30%_18%)]"
                 }
@@ -452,7 +482,7 @@ const Index = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Clubs
+              Departments
             </motion.button>
             <motion.button
               onClick={() => setSelectedCategory("sports")}
@@ -470,11 +500,11 @@ const Index = () => {
               Sports
             </motion.button>
             <motion.button
-              onClick={() => setSelectedCategory("majors")}
+              onClick={() => setSelectedCategory("clubs")}
               className={`
                 px-6 py-2.5 rounded-lg font-medium text-sm transition-all
                 ${
-                  selectedCategory === "majors"
+                  selectedCategory === "clubs"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-[hsl(270_30%_15%)] text-foreground border border-border hover:bg-[hsl(270_30%_18%)]"
                 }
@@ -482,25 +512,94 @@ const Index = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Departments
+              Clubs
             </motion.button>
           </div>
         </motion.div>
 
+        {/* Selected Events Pills */}
+        {selectedEvents.size > 0 && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <div className="flex flex-wrap items-center gap-2 justify-center">
+              {Array.from(selectedEvents).map((eventId) => {
+                // Check if it's a major
+                if (eventId.startsWith("major:")) {
+                  const majorName = eventId.replace(/^major:/, "");
+                  const major = majors.find((m) => m.name === majorName);
+                  if (!major) return null;
+                  return (
+                    <motion.div
+                      key={eventId}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm"
+                    >
+                      <span className="text-foreground">{major.name}</span>
+                      <button
+                        onClick={() => toggleEvent(eventId)}
+                        className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${major.name}`}
+                      >
+                        <X className="w-4 h-4 text-foreground" />
+                      </button>
+                    </motion.div>
+                  );
+                }
+                // Regular event
+                const event = EVENTS.find((e) => e.id === eventId);
+                if (!event) return null;
+                return (
+                  <motion.div
+                    key={eventId}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm"
+                  >
+                    <span className="text-foreground">{event.label}</span>
+                    <button
+                      onClick={() => toggleEvent(eventId)}
+                      className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                      aria-label={`Remove ${event.label}`}
+                    >
+                      <X className="w-4 h-4 text-foreground" />
+                    </button>
+                  </motion.div>
+                );
+              })}
+              <motion.button
+                onClick={() => setSelectedEvents(new Set())}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors"
+              >
+                Deselect all
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Search Bar */}
         <motion.div
-          className="mb-6"
+          className="mb-6 flex justify-center"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Input
-            type="text"
-            placeholder="Search by event name"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[hsl(270_30%_15%)] border-border text-center text-foreground placeholder:text-foreground/60 py-3"
-          />
+          <div className="relative w-full max-w-2xl">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground/60" />
+            <Input
+              type="text"
+              placeholder="Search events to auto-sync in your calendar"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[hsl(270_30%_15%)] border-border text-center text-foreground placeholder:text-foreground/60 py-3 pl-12"
+            />
+          </div>
         </motion.div>
 
         {/* Continue Button */}
@@ -566,7 +665,7 @@ const Index = () => {
             {/* Table Rows */}
             <div className="space-y-2">
               {selectedCategory === "majors" ? (
-                // Show majors
+                // Show only majors
                 isLoadingMajors ? (
                   <motion.div
                     className="text-center py-12"
@@ -618,8 +717,58 @@ const Index = () => {
                     );
                   })
                 )
+              ) : selectedCategory === "all" ? (
+                // Show all items alphabetically sorted
+                isLoadingMajors ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div
+                      className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    <p className="text-muted-foreground">Loading...</p>
+                  </motion.div>
+                ) : allItemsSorted.length === 0 ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <p className="text-muted-foreground">
+                      {searchQuery 
+                        ? `No events found matching "${searchQuery}"`
+                        : "No events available"
+                      }
+                    </p>
+                  </motion.div>
+                ) : (
+                  allItemsSorted.map((item, index) => (
+                    <motion.button
+                      key={item.id}
+                      onClick={() => item.isMajor ? toggleMajor(item.id) : toggleEvent(item.id)}
+                      className={`
+                        w-full grid grid-cols-[1fr_auto] gap-4 px-4 py-4 rounded-lg transition-all text-left
+                        ${
+                          selectedEvents.has(item.id)
+                            ? "bg-primary/20 border-2 border-primary"
+                            : "bg-[hsl(270_30%_12%)] border-2 border-transparent hover:bg-[hsl(270_30%_15%)]"
+                        }
+                      `}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <div className="font-medium text-foreground">{item.label}</div>
+                      <div className="text-foreground/70 text-right">{item.grouping}</div>
+                    </motion.button>
+                  ))
+                )
               ) : (
-                // Show regular events
+                // Show regular events only
                 filteredEvents.length === 0 ? (
                   <motion.div
                     className="text-center py-12"
