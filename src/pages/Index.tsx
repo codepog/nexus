@@ -246,8 +246,26 @@ const Index = () => {
         console.log("Token format check (UUID):", /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(token));
         
         // Fetch existing preferences
-        fetchPreferencesByToken(token)
-          .then((topicIds) => {
+        // First, ensure majors are loaded if not already (in case preferences include majors)
+        const loadPreferences = async () => {
+          try {
+            // Fetch majors first if not already loaded (in case preferences include majors)
+            if (!hasFetchedMajors.current) {
+              hasFetchedMajors.current = true;
+              setIsLoadingMajors(true);
+              try {
+                const majorsData = await fetchMajors();
+                console.log("Majors fetched for preferences loading:", majorsData);
+                setMajors(majorsData);
+                setIsLoadingMajors(false);
+              } catch (error) {
+                console.error("Error fetching majors:", error);
+                setIsLoadingMajors(false);
+                // Continue anyway - preferences can still be loaded
+              }
+            }
+            
+            const topicIds = await fetchPreferencesByToken(token);
             console.log("Fetched topicIds:", topicIds);
             console.log("topicIds type:", typeof topicIds);
             console.log("topicIds is array?", Array.isArray(topicIds));
@@ -273,17 +291,18 @@ const Index = () => {
               });
             }
             setIsLoadingPreferences(false);
-          })
-          .catch((error) => {
+          } catch (error) {
             console.error("Error loading preferences:", error);
-            console.error("Error stack:", error.stack);
             setIsLoadingPreferences(false);
             toast({
               title: "Could not load preferences",
-              description: error.message || "Starting with a fresh selection.",
+              description: error instanceof Error ? error.message : "Starting with a fresh selection.",
               variant: "destructive",
             });
-          });
+          }
+        };
+        
+        loadPreferences();
       } else {
         console.warn("Could not extract token from ICS URL:", icsUrlParam);
         toast({
@@ -316,13 +335,20 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // If no preferences are selected, pass ics_url with empty value
+      // If no preferences are selected, still save to Supabase if there's an existing token
       if (selectedEvents.size === 0) {
         console.log("No preferences selected. Redirect URI:", redirectUri);
+        
+        // If there's an existing token, update Supabase with empty preferences
+        if (existingToken) {
+          console.log("Updating Supabase with empty preferences for existing token");
+          await savePreferencesAndGetToken([], existingToken);
+        }
+        
         if (redirectUri) {
           toast({
-            title: "Redirecting...",
-            description: "No preferences selected.",
+            title: existingToken ? "Preferences cleared! 🎉" : "Redirecting...",
+            description: existingToken ? "All preferences removed." : "No preferences selected.",
           });
           
           // Construct the final redirect URL with empty ics_url parameter
@@ -339,8 +365,10 @@ const Index = () => {
           // Debug mode: no redirect URI, so just show informational message
           console.log("No redirect URI found, cannot redirect");
           toast({
-            title: "No preferences selected",
-            description: "In production with a redirect URL, this would redirect with ics_url= parameter.",
+            title: existingToken ? "Preferences cleared! 🎉" : "No preferences selected",
+            description: existingToken 
+              ? "All preferences have been removed from Supabase."
+              : "In production with a redirect URL, this would redirect with ics_url= parameter.",
           });
           setIsLoading(false);
           return;
