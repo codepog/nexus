@@ -646,52 +646,6 @@ const Index = () => {
           </div>
         </motion.div>
 
-        {/* Continue Button */}
-        <motion.div
-          className="mb-8 text-center"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <motion.button
-            onClick={handleSync}
-            disabled={isLoading}
-            className={`
-              relative group px-8 py-3 rounded-lg font-semibold text-base
-              transition-all
-              ${
-                !isLoading
-                  ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:scale-105 cursor-pointer"
-                  : "bg-[hsl(270_30%_15%)] text-muted-foreground cursor-not-allowed opacity-50"
-              }
-            `}
-            whileHover={!isLoading ? { scale: 1.05 } : {}}
-            whileTap={!isLoading ? { scale: 0.95 } : {}}
-          >
-            <span className="relative flex items-center gap-2 justify-center">
-              {isLoading ? (
-                <>
-                  <motion.div
-                    className="w-5 h-5 border-2 border-current border-t-transparent rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  Continue
-                </>
-              )}
-            </span>
-          </motion.button>
-          {selectedEvents.size > 0 && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {selectedEvents.size} event{selectedEvents.size !== 1 ? "s" : ""} selected
-            </p>
-          )}
-        </motion.div>
-
         {/* Event Selection Table */}
         <motion.div
           className="mb-8"
@@ -844,6 +798,51 @@ const Index = () => {
           </div>
         </motion.div>
 
+        {/* Continue Button */}
+        <motion.div
+          className="mb-8 text-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <motion.button
+            onClick={handleSync}
+            disabled={isLoading}
+            className={`
+              relative group px-8 py-3 rounded-lg font-semibold text-base
+              transition-all
+              ${
+                !isLoading
+                  ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:scale-105 cursor-pointer"
+                  : "bg-[hsl(270_30%_15%)] text-muted-foreground cursor-not-allowed opacity-50"
+              }
+            `}
+            whileHover={!isLoading ? { scale: 1.05 } : {}}
+            whileTap={!isLoading ? { scale: 0.95 } : {}}
+          >
+            <span className="relative flex items-center gap-2 justify-center">
+              {isLoading ? (
+                <>
+                  <motion.div
+                    className="w-5 h-5 border-2 border-current border-t-transparent rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  Continue
+                </>
+              )}
+            </span>
+          </motion.button>
+          {selectedEvents.size > 0 && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {selectedEvents.size} event{selectedEvents.size !== 1 ? "s" : ""} selected
+            </p>
+          )}
+        </motion.div>
 
         {/* ICS URL Display */}
         {icsUrl && (
