@@ -624,9 +624,24 @@ const Index = () => {
               type="text"
               placeholder="Search events to auto-sync in your calendar"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[hsl(270_30%_15%)] border-border text-center text-foreground placeholder:text-foreground/60 py-3 pl-12"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                // Switch to "All" tab when searching
+                if (e.target.value.trim()) {
+                  setSelectedCategory("all");
+                }
+              }}
+              className="w-full bg-[hsl(270_30%_15%)] border-border text-center text-foreground placeholder:text-foreground/60 py-3 pl-12 pr-10"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-foreground/10 rounded-full transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4 text-foreground/60 hover:text-foreground" />
+              </button>
+            )}
           </div>
         </motion.div>
 
