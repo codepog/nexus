@@ -837,11 +837,6 @@ const Index = () => {
               )}
             </span>
           </motion.button>
-          {selectedEvents.size > 0 && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {selectedEvents.size} event{selectedEvents.size !== 1 ? "s" : ""} selected
-            </p>
-          )}
         </motion.div>
 
         {/* ICS URL Display */}
