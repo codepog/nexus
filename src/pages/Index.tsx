@@ -85,16 +85,17 @@ const Index = () => {
   const hasFetchedMajors = useRef(false);
   const { toast } = useToast();
 
-  // Fetch majors when majors category is selected (only once)
+  // Fetch majors when majors or all category is selected (only once)
   useEffect(() => {
-    // Reset the ref when switching away from majors
-    if (selectedCategory !== "majors") {
-      hasFetchedMajors.current = false;
+    // Fetch majors for "majors" tab OR "all" tab (since all includes departments)
+    const needsMajors = selectedCategory === "majors" || selectedCategory === "all";
+    
+    if (!needsMajors) {
       return;
     }
 
     // Only fetch if we haven't fetched yet and we're not currently loading
-    if (!hasFetchedMajors.current && !isLoadingMajors) {
+    if (!hasFetchedMajors.current && !isLoadingMajors && majors.length === 0) {
       hasFetchedMajors.current = true;
       setIsLoadingMajors(true);
       fetchMajors()
@@ -121,7 +122,7 @@ const Index = () => {
           });
         });
     }
-  }, [selectedCategory, isLoadingMajors, toast]);
+  }, [selectedCategory, isLoadingMajors, majors.length, toast]);
 
   // Filter events based on search query and category, with selected items at top
   const filteredEvents = useMemo(() => {
