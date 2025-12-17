@@ -555,6 +555,14 @@ const Index = () => {
             transition={{ delay: 0.25 }}
           >
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent">
+              <motion.button
+                onClick={() => setSelectedEvents(new Set())}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex-shrink-0 px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors whitespace-nowrap"
+              >
+                Deselect all
+              </motion.button>
               {Array.from(selectedEvents).map((eventId) => {
                 // Check if it's a major
                 if (eventId.startsWith("major:")) {
@@ -600,14 +608,6 @@ const Index = () => {
                   </motion.div>
                 );
               })}
-              <motion.button
-                onClick={() => setSelectedEvents(new Set())}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex-shrink-0 px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors whitespace-nowrap"
-              >
-                Deselect all
-              </motion.button>
             </div>
           </motion.div>
         )}
