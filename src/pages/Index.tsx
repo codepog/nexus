@@ -554,7 +554,7 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <div className="flex flex-wrap items-center gap-2 justify-center">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent">
               {Array.from(selectedEvents).map((eventId) => {
                 // Check if it's a major
                 if (eventId.startsWith("major:")) {
@@ -566,7 +566,7 @@ const Index = () => {
                       key={eventId}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm"
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
                     >
                       <span className="text-foreground">{major.name}</span>
                       <button
@@ -587,7 +587,7 @@ const Index = () => {
                     key={eventId}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm"
+                    className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
                   >
                     <span className="text-foreground">{event.label}</span>
                     <button
@@ -604,7 +604,7 @@ const Index = () => {
                 onClick={() => setSelectedEvents(new Set())}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors"
+                className="flex-shrink-0 px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors whitespace-nowrap"
               >
                 Deselect all
               </motion.button>
