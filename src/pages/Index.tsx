@@ -699,13 +699,7 @@ const Index = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="max-h-[600px] overflow-y-auto scrollbar-visible">
-            {/* Table Header */}
-            <div className="grid grid-cols-[1fr_auto] gap-4 mb-2 px-4 pb-2 border-b border-border">
-              <div className="text-sm font-semibold text-foreground/80">Item</div>
-              <div className="text-sm font-semibold text-foreground/80 text-right">Grouping or detail</div>
-            </div>
-
+          <div className="max-h-[350px] overflow-y-auto scrollbar-visible">
             {/* Table Rows */}
             <div className="space-y-2">
               {selectedCategory === "majors" ? (
