@@ -258,69 +258,31 @@ function generateICS(events: CalendarEvent[]): string {
   ].join("\r\n");
 
   for (const event of events) {
-    // Normalize empty strings to null for consistent checking
-    const startTime = event.start_time && event.start_time.trim() !== '' ? event.start_time : null;
-    const endTime = event.end_time && event.end_time.trim() !== '' ? event.end_time : null;
-    const eventDate = event.event_date && event.event_date.trim() !== '' ? event.event_date : null;
-    
     // Skip events without a start time or date
-    if (!startTime && !eventDate) {
-      console.warn(`Skipping event ${event.id} (${event.title}): no start_time or event_date`);
+    if (!event.start_time && !event.event_date) {
       continue; // Skip events with no date/time information
     }
 
-    const isTimeTBD = event.time_tbd || !startTime;
+    const isTimeTBD = event.time_tbd || !event.start_time;
     let startDate: Date;
     let endDate: Date;
     let isAllDay = false;
 
-    if (isTimeTBD && eventDate) {
+    if (isTimeTBD && event.event_date) {
       // Use event_date for TBD time events (all-day format)
-      try {
-        // Handle both YYYY-MM-DD and full timestamp formats
-        const dateStr = eventDate.includes('T') ? eventDate.split('T')[0] : eventDate;
-        startDate = new Date(dateStr + "T00:00:00Z");
-        
-        if (isNaN(startDate.getTime())) {
-          console.warn(`Invalid event_date for event ${event.id}: ${eventDate}`);
-          continue;
-        }
-        
-        // For all-day events, DTEND is exclusive (next day)
-        endDate = new Date(startDate);
-        endDate.setUTCDate(endDate.getUTCDate() + 1);
-        isAllDay = true;
-      } catch (error) {
-        console.error(`Error parsing event_date for event ${event.id}: ${eventDate}`, error);
-        continue;
-      }
-    } else if (startTime) {
+      startDate = new Date(event.event_date + "T00:00:00Z");
+      // For all-day events, DTEND is exclusive (next day)
+      endDate = new Date(startDate);
+      endDate.setUTCDate(endDate.getUTCDate() + 1);
+      isAllDay = true;
+    } else if (event.start_time) {
       // Normal event with specific time
-      try {
-        startDate = new Date(startTime);
-        
-        if (isNaN(startDate.getTime())) {
-          console.warn(`Invalid start_time for event ${event.id}: ${startTime}`);
-          continue;
-        }
-        
-        if (endTime) {
-          endDate = new Date(endTime);
-          if (isNaN(endDate.getTime())) {
-            console.warn(`Invalid end_time for event ${event.id}: ${endTime}, using default 1 hour`);
-            endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-          }
-        } else {
-          // Default 1 hour if no end time
-          endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-        }
-      } catch (error) {
-        console.error(`Error parsing start_time for event ${event.id}: ${startTime}`, error);
-        continue;
-      }
+      startDate = new Date(event.start_time);
+      endDate = event.end_time
+        ? new Date(event.end_time)
+        : new Date(startDate.getTime() + 60 * 60 * 1000); // Default 1 hour if no end time
     } else {
       // Fallback: skip if no valid date/time
-      console.warn(`Skipping event ${event.id} (${event.title}): no valid date/time information`);
       continue;
     }
 
@@ -377,7 +339,14 @@ function generateICS(events: CalendarEvent[]): string {
           // Build RRULE based on frequency (handle lowercase input)
           const freq = event.recurrence_frequency.toUpperCase();
           if (["DAILY", "WEEKLY", "MONTHLY", "YEARLY"].includes(freq)) {
-            ics += `\r\nRRULE:FREQ=${freq};UNTIL=${untilDateStr}`;
+            // For WEEKLY frequency, add BYDAY parameter for better calendar app compatibility
+            if (freq === "WEEKLY") {
+              const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+              const dayOfWeek = days[startDate.getUTCDay()];
+              ics += `\r\nRRULE:FREQ=${freq};BYDAY=${dayOfWeek};UNTIL=${untilDateStr}`;
+            } else {
+              ics += `\r\nRRULE:FREQ=${freq};UNTIL=${untilDateStr}`;
+            }
           } else {
             console.warn(`Invalid recurrence_frequency for event ${event.id}: ${event.recurrence_frequency}`);
           }
@@ -427,11 +396,12 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get user preferences from feed_preferences table
+    // Note: topic_id is stored as an array in a single row
     const { data: preferences, error: prefError } = await supabase
       .from("feed_preferences")
       .select("topic_id")
       .eq("user_token", token)
-      .single(); // Get single row since we now store array in one row
+      .single();
 
     if (prefError) {
       console.error("Error fetching preferences:", prefError);
@@ -444,7 +414,7 @@ serve(async (req) => {
       );
     }
 
-    if (!preferences || !preferences.topic_id) {
+    if (!preferences) {
       return new Response(
         JSON.stringify({ error: "No preferences found for this token" }),
         {
@@ -454,17 +424,58 @@ serve(async (req) => {
       );
     }
 
-    // topic_id is now an array, so we can use it directly
-    // Handle both array format and single value (for backwards compatibility)
-    const topicIdArray = Array.isArray(preferences.topic_id) 
-      ? preferences.topic_id 
-      : [preferences.topic_id];
+    // topic_id is stored as an array - handle both array and null cases
+    let topicIdArray: string[] = [];
+    if (preferences.topic_id) {
+      if (Array.isArray(preferences.topic_id)) {
+        topicIdArray = preferences.topic_id;
+      } else if (typeof preferences.topic_id === 'string') {
+        // Handle if stored as JSON string or comma-separated
+        try {
+          const parsed = JSON.parse(preferences.topic_id);
+          topicIdArray = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          topicIdArray = preferences.topic_id.split(',').map(s => s.trim()).filter(s => s);
+        }
+      } else {
+        topicIdArray = [String(preferences.topic_id)];
+      }
+    }
+
+    console.log("Raw topic_id from DB:", preferences.topic_id);
+    console.log("Parsed topicIdArray:", topicIdArray);
+
+    // If no preferences selected, return empty ICS file
+    if (topicIdArray.length === 0) {
+      console.log("No preferences selected, returning empty ICS");
+      const emptyICS = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Nexus Sync//Calendar Feed//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "END:VCALENDAR"
+      ].join("\r\n");
+      
+      return new Response(emptyICS, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/calendar; charset=utf-8",
+          "Content-Disposition": 'attachment; filename="calendar.ics"',
+        },
+      });
+    }
 
     // Separate regular topic IDs from major selections
     const topicIds: string[] = [];
     const majorNames: string[] = [];
     
     for (const topicId of topicIdArray) {
+      if (!topicId || typeof topicId !== 'string') {
+        console.warn("Skipping invalid topicId:", topicId);
+        continue;
+      }
       if (topicId.startsWith("major:")) {
         // Extract major name (remove "major:" prefix)
         const majorName = topicId.replace(/^major:/, "");
@@ -496,30 +507,8 @@ serve(async (req) => {
         );
       }
       
-      events = (dbEvents || []).filter((event) => {
-        // Validate that event has required fields
-        if (!event.id) {
-          console.warn(`Skipping event with no id:`, event);
-          return false;
-        }
-        if (!event.title) {
-          console.warn(`Skipping event ${event.id} with no title`);
-          return false;
-        }
-        if (!event.topic_id) {
-          console.warn(`Skipping event ${event.id} with no topic_id`);
-          return false;
-        }
-        // Event must have either start_time or event_date
-        const hasStartTime = event.start_time && event.start_time.trim() !== '';
-        const hasEventDate = event.event_date && event.event_date.trim() !== '';
-        if (!hasStartTime && !hasEventDate) {
-          console.warn(`Skipping event ${event.id} (${event.title}): no start_time or event_date`);
-          return false;
-        }
-        return true;
-      });
-      console.log(`Found ${events.length} valid events for ${topicIds.length} topics (after filtering)`);
+      events = dbEvents || [];
+      console.log(`Found ${events.length} events for ${topicIds.length} topics`);
     }
 
     // Fetch and parse ICS files for selected majors
@@ -586,29 +575,12 @@ serve(async (req) => {
       console.log(`Added ${majorEvents.length} events from ${majorNames.length} majors`);
     }
     
-    // Sort events manually to handle NULL start_time values and event_date
+    // Sort events manually to handle NULL start_time values
     const sortedEvents = events.sort((a, b) => {
-      // Get sortable date for each event (prefer start_time, fallback to event_date)
-      const getSortDate = (event: CalendarEvent): Date | null => {
-        if (event.start_time && event.start_time.trim() !== '') {
-          const date = new Date(event.start_time);
-          return isNaN(date.getTime()) ? null : date;
-        }
-        if (event.event_date && event.event_date.trim() !== '') {
-          const dateStr = event.event_date.includes('T') ? event.event_date.split('T')[0] : event.event_date;
-          const date = new Date(dateStr + "T00:00:00Z");
-          return isNaN(date.getTime()) ? null : date;
-        }
-        return null;
-      };
-      
-      const dateA = getSortDate(a);
-      const dateB = getSortDate(b);
-      
-      if (!dateA && !dateB) return 0;
-      if (!dateA) return 1; // NULLs go to end
-      if (!dateB) return -1;
-      return dateA.getTime() - dateB.getTime();
+      if (!a.start_time && !b.start_time) return 0;
+      if (!a.start_time) return 1; // NULLs go to end
+      if (!b.start_time) return -1;
+      return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
     });
 
     // Generate ICS content
@@ -634,4 +606,8 @@ serve(async (req) => {
     );
   }
 });
+
+
+
+
 
