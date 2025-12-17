@@ -563,7 +563,7 @@ const Index = () => {
               >
                 Deselect all
               </motion.button>
-              {Array.from(selectedEvents).map((eventId) => {
+              {Array.from(selectedEvents).reverse().map((eventId) => {
                 // Check if it's a major
                 if (eventId.startsWith("major:")) {
                   const majorName = eventId.replace(/^major:/, "");
