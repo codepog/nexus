@@ -466,3 +466,79 @@ export const constructIcsUrl = (token: string): string => {
   // Provide prettified .ics URL for calendar clients (token embedded in path)
   return `https://${projectRef}.supabase.co/functions/v1/user-feed/${token}.ics`;
 };
+
+/**
+ * Adds a topic to the user's waitlist in feed_preferences
+ * @param requestedTopic - The topic/event the user is requesting
+ * @param userToken - Optional existing user token to link the request
+ * @returns Promise resolving to the updated token
+ */
+export const addToEventWaitlist = async (
+  requestedTopic: string,
+  userToken?: string | null
+): Promise<string> => {
+  if (!requestedTopic.trim()) {
+    throw new Error('Requested topic cannot be empty');
+  }
+
+  const supabase = getSupabaseClient();
+  const topic = requestedTopic.trim();
+
+  if (userToken) {
+    // User has existing token - fetch current waitlist and append
+    const { data: existing, error: fetchError } = await supabase
+      .from('feed_preferences')
+      .select('waitlist_topics')
+      .eq('user_token', userToken)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error fetching existing waitlist:', fetchError);
+      throw new Error(`Failed to fetch waitlist: ${fetchError.message}`);
+    }
+
+    // Get current waitlist or empty array
+    const currentWaitlist: string[] = existing?.waitlist_topics || [];
+    
+    // Don't add duplicates
+    if (currentWaitlist.includes(topic)) {
+      console.log('Topic already in waitlist:', topic);
+      return userToken;
+    }
+
+    // Append new topic
+    const updatedWaitlist = [...currentWaitlist, topic];
+
+    const { error: updateError } = await supabase
+      .from('feed_preferences')
+      .update({ waitlist_topics: updatedWaitlist })
+      .eq('user_token', userToken);
+
+    if (updateError) {
+      console.error('Error updating waitlist:', updateError);
+      throw new Error(`Failed to update waitlist: ${updateError.message}`);
+    }
+
+    console.log('Added to waitlist:', topic, 'for token:', userToken);
+    return userToken;
+  } else {
+    // No token - create new feed_preferences row with just the waitlist topic
+    const newToken = uuidv4();
+
+    const { error: insertError } = await supabase
+      .from('feed_preferences')
+      .insert({
+        user_token: newToken,
+        topic_id: null,
+        waitlist_topics: [topic],
+      });
+
+    if (insertError) {
+      console.error('Error creating waitlist entry:', insertError);
+      throw new Error(`Failed to create waitlist: ${insertError.message}`);
+    }
+
+    console.log('Created new waitlist entry:', topic, 'with token:', newToken);
+    return newToken;
+  }
+};

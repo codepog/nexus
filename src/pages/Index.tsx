@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Copy, Check, Search, X } from "lucide-react";
-import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, extractTokenFromIcsUrl, fetchPreferencesByToken, type Major } from "@/utils/supabaseService";
+import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -82,8 +82,42 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
   const [majors, setMajors] = useState<Major[]>([]);
   const [isLoadingMajors, setIsLoadingMajors] = useState(false);
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const hasFetchedMajors = useRef(false);
   const { toast } = useToast();
+
+  // Reset waitlist state when search query changes
+  useEffect(() => {
+    setWaitlistSubmitted(false);
+  }, [searchQuery]);
+
+  const handleWaitlistSubmit = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSubmittingWaitlist(true);
+    try {
+      const token = await addToEventWaitlist(searchQuery, existingToken);
+      // If a new token was created (user didn't have one), save it
+      if (!existingToken && token) {
+        setExistingToken(token);
+      }
+      setWaitlistSubmitted(true);
+      toast({
+        title: "Added to waitlist! 🎉",
+        description: `We'll notify you when "${searchQuery}" becomes available.`,
+      });
+    } catch (error) {
+      console.error("Error adding to waitlist:", error);
+      toast({
+        title: "Couldn't add to waitlist",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingWaitlist(false);
+    }
+  };
 
   // Fetch majors when majors or all category is selected (only once)
   useEffect(() => {
@@ -548,72 +582,6 @@ const Index = () => {
           </div>
         </motion.div>
 
-        {/* Selected Events Pills */}
-        {selectedEvents.size > 0 && (
-          <motion.div
-            className="mb-6"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-          >
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent">
-              <motion.button
-                onClick={() => setSelectedEvents(new Set())}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex-shrink-0 px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors whitespace-nowrap"
-              >
-                Deselect all
-              </motion.button>
-              {Array.from(selectedEvents).reverse().map((eventId) => {
-                // Check if it's a major
-                if (eventId.startsWith("major:")) {
-                  const majorName = eventId.replace(/^major:/, "");
-                  const major = majors.find((m) => m.name === majorName);
-                  if (!major) return null;
-                  return (
-                    <motion.div
-                      key={eventId}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
-                    >
-                      <span className="text-foreground">{major.name}</span>
-                      <button
-                        onClick={() => toggleEvent(eventId)}
-                        className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
-                        aria-label={`Remove ${major.name}`}
-                      >
-                        <X className="w-4 h-4 text-foreground" />
-                      </button>
-                    </motion.div>
-                  );
-                }
-                // Regular event
-                const event = EVENTS.find((e) => e.id === eventId);
-                if (!event) return null;
-                return (
-                  <motion.div
-                    key={eventId}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
-                  >
-                    <span className="text-foreground">{event.label}</span>
-                    <button
-                      onClick={() => toggleEvent(eventId)}
-                      className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
-                      aria-label={`Remove ${event.label}`}
-                    >
-                      <X className="w-4 h-4 text-foreground" />
-                    </button>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-
         {/* Search Bar */}
         <motion.div
           className="mb-6 flex justify-center"
@@ -648,6 +616,74 @@ const Index = () => {
           </div>
         </motion.div>
 
+        {/* Selected Events Pills */}
+        {selectedEvents.size > 0 && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <div className="bg-background/30 backdrop-blur-sm rounded-lg p-3 border border-border/50">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <motion.button
+                  onClick={() => setSelectedEvents(new Set())}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex-shrink-0 px-3 py-1.5 text-sm text-foreground/80 hover:text-foreground border border-border rounded-full hover:bg-[hsl(270_30%_15%)] transition-colors whitespace-nowrap"
+                >
+                  Deselect all
+                </motion.button>
+                {Array.from(selectedEvents).reverse().map((eventId) => {
+                  // Check if it's a major
+                  if (eventId.startsWith("major:")) {
+                    const majorName = eventId.replace(/^major:/, "");
+                    const major = majors.find((m) => m.name === majorName);
+                    if (!major) return null;
+                    return (
+                      <motion.div
+                        key={eventId}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
+                      >
+                        <span className="text-foreground">{major.name}</span>
+                        <button
+                          onClick={() => toggleEvent(eventId)}
+                          className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${major.name}`}
+                        >
+                          <X className="w-4 h-4 text-foreground" />
+                        </button>
+                      </motion.div>
+                    );
+                  }
+                  // Regular event
+                  const event = EVENTS.find((e) => e.id === eventId);
+                  if (!event) return null;
+                  return (
+                    <motion.div
+                      key={eventId}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
+                    >
+                      <span className="text-foreground">{event.label}</span>
+                      <button
+                        onClick={() => toggleEvent(eventId)}
+                        className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${event.label}`}
+                      >
+                        <X className="w-4 h-4 text-foreground" />
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Event Selection Table */}
         <motion.div
           className="mb-8"
@@ -679,12 +715,28 @@ const Index = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
-                    <p className="text-muted-foreground">
-                      {searchQuery 
-                        ? `No majors found matching "${searchQuery}"`
-                        : "No majors available"
-                      }
-                    </p>
+                    {searchQuery ? (
+                      waitlistSubmitted ? (
+                        <p className="text-primary">✓ You're on the waitlist for "{searchQuery}"</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground">
+                            Would you like to be put on the waitlist for "{searchQuery}"?
+                          </p>
+                          <motion.button
+                            onClick={handleWaitlistSubmit}
+                            disabled={isSubmittingWaitlist}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmittingWaitlist ? "Adding..." : "Yes, add me to the waitlist"}
+                          </motion.button>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-muted-foreground">No majors available</p>
+                    )}
                   </motion.div>
                 ) : (
                   filteredMajors.map((major, index) => {
@@ -732,12 +784,28 @@ const Index = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
-                    <p className="text-muted-foreground">
-                      {searchQuery 
-                        ? `No events found matching "${searchQuery}"`
-                        : "No events available"
-                      }
-                    </p>
+                    {searchQuery ? (
+                      waitlistSubmitted ? (
+                        <p className="text-primary">✓ You're on the waitlist for "{searchQuery}"</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground">
+                            Would you like to be put on the waitlist for "{searchQuery}"?
+                          </p>
+                          <motion.button
+                            onClick={handleWaitlistSubmit}
+                            disabled={isSubmittingWaitlist}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmittingWaitlist ? "Adding..." : "Yes, add me to the waitlist"}
+                          </motion.button>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-muted-foreground">No events available</p>
+                    )}
                   </motion.div>
                 ) : (
                   allItemsSorted.map((item, index) => (
@@ -769,9 +837,28 @@ const Index = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                   >
-                    <p className="text-muted-foreground">
-                      No events found matching "{searchQuery}"
-                    </p>
+                    {searchQuery ? (
+                      waitlistSubmitted ? (
+                        <p className="text-primary">✓ You're on the waitlist for "{searchQuery}"</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground">
+                            Would you like to be put on the waitlist for "{searchQuery}"?
+                          </p>
+                          <motion.button
+                            onClick={handleWaitlistSubmit}
+                            disabled={isSubmittingWaitlist}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmittingWaitlist ? "Adding..." : "Yes, add me to the waitlist"}
+                          </motion.button>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-muted-foreground">No events found</p>
+                    )}
                   </motion.div>
                 ) : (
                   filteredEvents.map((event, index) => (

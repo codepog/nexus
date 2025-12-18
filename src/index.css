@@ -89,4 +89,14 @@ All colors MUST be HSL.
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) hsl(var(--muted) / 0.3);
   }
+
+  /* Hide scrollbar but keep scrolling */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
