@@ -11,6 +11,13 @@ export interface Major {
   url: string;
 }
 
+export interface AcademicEvent {
+  id: string;
+  title: string;
+  description: string;
+  topic_id: string;
+}
+
 /**
  * Initialize Supabase client using environment variables
  */
@@ -93,6 +100,47 @@ export const fetchMajors = async (): Promise<Major[]> => {
     return data || [];
   } catch (error: any) {
     console.error('fetchMajors error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches events from Supabase by description (category)
+ * @param description - The description/category to filter by (e.g., "Academics")
+ * @returns Promise resolving to an array of events
+ */
+export const fetchEventsByDescription = async (description: string): Promise<AcademicEvent[]> => {
+  try {
+    const supabase = getSupabaseClient();
+    
+    console.log(`Fetching events with description "${description}" from Supabase...`);
+    
+    const { data, error } = await supabase
+      .from('events')
+      .select('id, title, description, topic_id')
+      .eq('description', description)
+      .order('topic_id');
+
+    if (error) {
+      console.error(`Error fetching ${description} events:`, error);
+      throw new Error(`Failed to fetch ${description} events: ${error.message}`);
+    }
+
+    // Get unique topic_ids (multiple events may share the same topic_id)
+    const uniqueTopicIds = new Set<string>();
+    const uniqueEvents: AcademicEvent[] = [];
+    
+    for (const event of data || []) {
+      if (!uniqueTopicIds.has(event.topic_id)) {
+        uniqueTopicIds.add(event.topic_id);
+        uniqueEvents.push(event);
+      }
+    }
+
+    console.log(`Successfully fetched ${uniqueEvents.length} unique ${description} topic_ids:`, uniqueEvents.map(e => e.topic_id));
+    return uniqueEvents;
+  } catch (error: any) {
+    console.error('fetchEventsByDescription error:', error);
     throw error;
   }
 };

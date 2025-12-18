@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Copy, Check, Search, X } from "lucide-react";
-import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major } from "@/utils/supabaseService";
+import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, fetchEventsByDescription, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major, type AcademicEvent } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-type EventCategory = "sports" | "clubs" | "majors";
+type EventCategory = "sports" | "clubs" | "majors" | "academics";
 
 interface Event {
   id: string;
@@ -82,9 +82,12 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
   const [majors, setMajors] = useState<Major[]>([]);
   const [isLoadingMajors, setIsLoadingMajors] = useState(false);
+  const [academics, setAcademics] = useState<AcademicEvent[]>([]);
+  const [isLoadingAcademics, setIsLoadingAcademics] = useState(false);
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const hasFetchedMajors = useRef(false);
+  const hasFetchedAcademics = useRef(false);
   const { toast } = useToast();
 
   // Reset waitlist state when search query changes
@@ -158,6 +161,36 @@ const Index = () => {
     }
   }, [selectedCategory, isLoadingMajors, majors.length, toast]);
 
+  // Fetch academics when academics or all category is selected
+  useEffect(() => {
+    const needsAcademics = selectedCategory === "academics" || selectedCategory === "all";
+    
+    if (!needsAcademics) {
+      return;
+    }
+
+    if (!hasFetchedAcademics.current && !isLoadingAcademics && academics.length === 0) {
+      hasFetchedAcademics.current = true;
+      setIsLoadingAcademics(true);
+      fetchEventsByDescription("Academics")
+        .then((data) => {
+          console.log("Academics fetched successfully:", data);
+          setAcademics(data);
+          setIsLoadingAcademics(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching academics:", error);
+          setIsLoadingAcademics(false);
+          hasFetchedAcademics.current = false;
+          toast({
+            title: "Failed to load academics",
+            description: error.message || "Could not fetch academic events from database.",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [selectedCategory, isLoadingAcademics, academics.length, toast]);
+
   // Filter events based on search query and category, with selected items at top
   const filteredEvents = useMemo(() => {
     let filtered = EVENTS;
@@ -199,10 +232,31 @@ const Index = () => {
     return filtered;
   }, [majors, searchQuery, selectedCategory, selectedEvents]);
 
+  // Filter academics based on search query
+  const filteredAcademics = useMemo(() => {
+    if (selectedCategory !== "academics" && selectedCategory !== "all") {
+      return [];
+    }
+
+    let filtered = academics;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((academic) =>
+        academic.topic_id.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [academics, searchQuery, selectedCategory]);
+
   // Helper function to get grouping/detail for events
-  const getEventGrouping = (event: Event | Major, isMajor: boolean): string => {
+  const getEventGrouping = (event: Event | Major | AcademicEvent, isMajor: boolean, isAcademic: boolean = false): string => {
     if (isMajor) {
       return "Department";
+    }
+    if (isAcademic) {
+      return "Academics";
     }
     const evt = event as Event;
     if (evt.category === "sports") return "Sports";
@@ -216,12 +270,13 @@ const Index = () => {
       return [];
     }
 
-    // Combine majors and events into a single array with a common structure
+    // Combine majors, academics, and events into a single array with a common structure
     const items: Array<{
       id: string;
       label: string;
       grouping: string;
       isMajor: boolean;
+      isAcademic: boolean;
     }> = [];
 
     // Add majors
@@ -231,6 +286,18 @@ const Index = () => {
         label: major.name,
         grouping: "Department",
         isMajor: true,
+        isAcademic: false,
+      });
+    });
+
+    // Add academics
+    filteredAcademics.forEach((academic) => {
+      items.push({
+        id: academic.topic_id,
+        label: academic.topic_id,
+        grouping: "Academics",
+        isMajor: false,
+        isAcademic: true,
       });
     });
 
@@ -239,14 +306,15 @@ const Index = () => {
       items.push({
         id: event.id,
         label: event.label,
-        grouping: getEventGrouping(event, false),
+        grouping: getEventGrouping(event, false, false),
         isMajor: false,
+        isAcademic: false,
       });
     });
 
     // Sort alphabetically by label
     return items.sort((a, b) => a.label.localeCompare(b.label));
-  }, [filteredMajors, filteredEvents, selectedCategory]);
+  }, [filteredMajors, filteredAcademics, filteredEvents, selectedCategory]);
 
   // Check for redirect-url, redirect_uri, and ics_url parameters on load
   useEffect(() => {
@@ -547,7 +615,22 @@ const Index = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Depts
+              Departments
+            </motion.button>
+            <motion.button
+              onClick={() => setSelectedCategory("academics")}
+              className={`
+                px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                ${
+                  selectedCategory === "academics"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-[hsl(270_30%_15%)] text-foreground border border-border hover:bg-[hsl(270_30%_18%)]"
+                }
+              `}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Academics
             </motion.button>
             <motion.button
               onClick={() => setSelectedCategory("sports")}
@@ -658,7 +741,28 @@ const Index = () => {
                       </motion.div>
                     );
                   }
-                  // Regular event
+                  // Check if it's an academic event
+                  const academic = academics.find((a) => a.topic_id === eventId);
+                  if (academic) {
+                    return (
+                      <motion.div
+                        key={eventId}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
+                      >
+                        <span className="text-foreground">{academic.topic_id}</span>
+                        <button
+                          onClick={() => toggleEvent(eventId)}
+                          className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${academic.topic_id}`}
+                        >
+                          <X className="w-4 h-4 text-foreground" />
+                        </button>
+                      </motion.div>
+                    );
+                  }
+                  // Regular event (clubs/sports)
                   const event = EVENTS.find((e) => e.id === eventId);
                   if (!event) return null;
                   return (
@@ -763,9 +867,75 @@ const Index = () => {
                     );
                   })
                 )
+              ) : selectedCategory === "academics" ? (
+                // Show only academics
+                isLoadingAcademics ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div
+                      className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    <p className="text-muted-foreground">Loading academics...</p>
+                  </motion.div>
+                ) : filteredAcademics.length === 0 ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {searchQuery ? (
+                      waitlistSubmitted ? (
+                        <p className="text-primary">✓ You're on the waitlist for "{searchQuery}"</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground">
+                            Would you like to be put on the waitlist for "{searchQuery}"?
+                          </p>
+                          <motion.button
+                            onClick={handleWaitlistSubmit}
+                            disabled={isSubmittingWaitlist}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmittingWaitlist ? "Adding..." : "Yes, add me to the waitlist"}
+                          </motion.button>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-muted-foreground">No academic events available</p>
+                    )}
+                  </motion.div>
+                ) : (
+                  filteredAcademics.map((academic, index) => (
+                    <motion.button
+                      key={academic.id}
+                      onClick={() => toggleEvent(academic.topic_id)}
+                      className={`
+                        w-full grid grid-cols-[1fr_auto] gap-4 px-4 py-4 rounded-lg transition-all text-left
+                        ${
+                          selectedEvents.has(academic.topic_id)
+                            ? "bg-primary/20 border-2 border-primary"
+                            : "bg-[hsl(270_30%_12%)] border-2 border-transparent hover:bg-[hsl(270_30%_15%)]"
+                        }
+                      `}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <div className="font-medium text-foreground">{academic.topic_id}</div>
+                      <div className="text-foreground/70 text-right">Academics</div>
+                    </motion.button>
+                  ))
+                )
               ) : selectedCategory === "all" ? (
                 // Show all items alphabetically sorted
-                isLoadingMajors ? (
+                (isLoadingMajors || isLoadingAcademics) ? (
                   <motion.div
                     className="text-center py-12"
                     initial={{ opacity: 0 }}
