@@ -442,15 +442,17 @@ const Index = () => {
     <div 
       className="min-h-screen text-foreground relative"
       style={{
-        backgroundImage: 'url(/uw-background.png)',
-        backgroundSize: 'auto',
-        backgroundPosition: 'top left',
-        backgroundRepeat: 'repeat',
+        background: `
+          radial-gradient(ellipse at 0% 0%, rgba(75, 46, 131, 0.6) 0%, transparent 50%),
+          radial-gradient(ellipse at 100% 0%, rgba(183, 165, 122, 0.5) 0%, transparent 45%),
+          radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+          radial-gradient(ellipse at 100% 100%, rgba(75, 46, 131, 0.4) 0%, transparent 50%),
+          radial-gradient(ellipse at 0% 100%, rgba(183, 165, 122, 0.4) 0%, transparent 45%),
+          linear-gradient(135deg, #1a1025 0%, #2d1f3d 25%, #1f1a2e 50%, #2a2035 75%, #1a1025 100%)
+        `,
         backgroundAttachment: 'fixed',
       }}
     >
-      {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]"></div>
       <div className="container max-w-4xl mx-auto px-6 py-12 relative z-10">
         {/* Progress Bar/Accent at Top */}
         <motion.div
