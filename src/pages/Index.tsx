@@ -575,7 +575,7 @@ const Index = () => {
             Subscribe to Campus Events
           </h1>
           <p className="text-base text-foreground/90 max-w-2xl mx-auto">
-            Get campus event automatically sourced onto your calendar! Just select the majors, sports, clubs or other on campus activities to subscribe to.
+            Get campus event automatically sourced onto your calendar! Just select the majors, sports, clubs or other on campus activities to subscribe to. You can always change this later in settings.
           </p>
         </motion.div>
 
@@ -586,11 +586,11 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex gap-3 justify-center flex-wrap">
+          <div className="flex gap-3 justify-start overflow-x-auto scrollbar-hide pb-1">
             <motion.button
               onClick={() => setSelectedCategory("all")}
               className={`
-                px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "all"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -605,7 +605,7 @@ const Index = () => {
             <motion.button
               onClick={() => setSelectedCategory("majors")}
               className={`
-                px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "majors"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -620,7 +620,7 @@ const Index = () => {
             <motion.button
               onClick={() => setSelectedCategory("academics")}
               className={`
-                px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "academics"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -635,7 +635,7 @@ const Index = () => {
             <motion.button
               onClick={() => setSelectedCategory("sports")}
               className={`
-                px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "sports"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -650,7 +650,7 @@ const Index = () => {
             <motion.button
               onClick={() => setSelectedCategory("clubs")}
               className={`
-                px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "clubs"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -733,7 +733,7 @@ const Index = () => {
                 </>
               ) : (
                 <>
-                  Continue
+                  Back to Wick
                 </>
               )}
             </span>
