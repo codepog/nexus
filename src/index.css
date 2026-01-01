@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
@@ -19,8 +19,8 @@ All colors MUST be HSL.
     --popover: 270 35% 12%;
     --popover-foreground: 0 0% 98%;
 
-    /* Vibrant Purple/Lavender Accent */
-    --primary: 270 80% 65%;
+    /* Vibrant Purple/Lavender Accent - #7748FF */
+    --primary: 258 100% 64%;
     --primary-foreground: 0 0% 98%;
 
     /* Subtle Secondary */
@@ -35,6 +35,17 @@ All colors MUST be HSL.
     --accent: 270 80% 65%;
     --accent-foreground: 0 0% 98%;
 
+    /* Gold Accent for CTAs - #E9BB16 */
+    --accent-gold: 45 85% 50%;
+    --accent-gold-foreground: 258 56% 26%;
+
+    /* Dark Purple for Cards - #2E1A67 */
+    --card-dark: 258 56% 26%;
+    --card-dark-foreground: 0 0% 98%;
+
+    /* Purple Border - #A995FF */
+    --border-accent: 252 100% 79%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
@@ -48,6 +59,12 @@ All colors MUST be HSL.
     /* Glow Effects */
     --glow-primary: 270 80% 65%;
     --glow-intensity: 0.6;
+
+    /* Font Families */
+    --font-heading: 'Caprasimo', cursive;
+    --font-body: 'Lato', sans-serif;
+    --font-button: 'Dosis', sans-serif;
+    --font-nav: 'Manrope', sans-serif;
   }
 }
 

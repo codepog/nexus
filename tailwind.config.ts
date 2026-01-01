@@ -38,6 +38,8 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          gold: "hsl(var(--accent-gold))",
+          "gold-foreground": "hsl(var(--accent-gold-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -46,10 +48,19 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          dark: "hsl(var(--card-dark))",
+          "dark-foreground": "hsl(var(--card-dark-foreground))",
         },
         glow: {
           primary: "hsl(var(--glow-primary))",
         },
+        "border-accent": "hsl(var(--border-accent))",
+      },
+      fontFamily: {
+        heading: ['Caprasimo', 'cursive'],
+        body: ['Lato', 'sans-serif'],
+        button: ['Dosis', 'sans-serif'],
+        nav: ['Manrope', 'sans-serif'],
       },
       boxShadow: {
         'glow-sm': '0 0 10px rgba(0, 217, 255, 0.3)',
