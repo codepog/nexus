@@ -36,20 +36,6 @@ const OnboardingIntro = () => {
 
   return (
     <div className="min-h-screen text-foreground relative overflow-x-hidden">
-      {/* Logo/Home Link */}
-      <motion.div
-        className="absolute top-6 left-6 z-20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <Link
-          to="/"
-          className="font-body font-bold text-xl text-white hover:text-white/80 transition-colors"
-        >
-          Maximal Learning
-        </Link>
-      </motion.div>
-
       {/* Hero Section with Background */}
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
         {/* Background */}
