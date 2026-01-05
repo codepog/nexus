@@ -50,7 +50,7 @@ const Landing = () => {
 
             {/* Get Early Access Button */}
             <a
-              href="https://max.maximallearning.com/auth/signup?uni=uw.edu"
+              href="https://app.wick.app/auth/signup?uni=uw.edu"
               className="inline-block bg-accent-gold text-card-dark font-button font-bold text-lg md:text-xl px-6 md:px-8 py-3 md:py-4 rounded-lg hover:opacity-90 transition-opacity mb-6 md:mb-8"
             >
               Get Early Access
@@ -110,7 +110,7 @@ const Landing = () => {
             <div className="flex flex-col lg:flex-row gap-8 md:gap-12 items-center">
               {/* Left - 3 Steps */}
               <motion.div 
-                className="flex-1 space-y-8 text-center lg:text-left"
+                className="flex-1 space-y-8 text-center"
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -122,7 +122,7 @@ const Landing = () => {
                   <h3 className="font-heading text-xl md:text-2xl text-white mb-2">
                     1. Join Wick
                   </h3>
-                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto lg:mx-0">
+                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto">
                     Wick is a free tool that helps you plan, and organize your time and commitments while holding you accountable to get things done.
                   </p>
                 </div>
@@ -133,7 +133,7 @@ const Landing = () => {
                   <h3 className="font-heading text-xl md:text-2xl text-white mb-2">
                     2. Connect Canvas
                   </h3>
-                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto lg:mx-0">
+                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto">
                     Connect Canvas during onboarding, and Wick will make sure you never miss a deadline or assignment again!
                   </p>
                 </div>
@@ -144,7 +144,7 @@ const Landing = () => {
                   <h3 className="font-heading text-xl md:text-2xl text-white mb-2">
                     3. Your UW Hub
                   </h3>
-                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto lg:mx-0">
+                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto">
                     Subscribe to your UW sports, clubs, and departments to never miss an important event and find new communities. All your UW needs, now in one place!
                   </p>
                 </div>
@@ -161,7 +161,7 @@ const Landing = () => {
                 <img
                   src={homeCroppedSrc}
                   alt="Wick Home Screen"
-                  className="w-full max-w-xs md:max-w-sm rounded-2xl md:rounded-3xl shadow-2xl"
+                  className="w-full max-w-[240px] md:max-w-[280px] rounded-2xl md:rounded-3xl shadow-2xl"
                 />
               </motion.div>
             </div>
@@ -259,7 +259,7 @@ const Landing = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             <a
-              href="https://max.maximallearning.com/auth/signup?uni=uw.edu"
+              href="https://app.wick.app/auth/signup?uni=uw.edu"
               className="inline-block bg-accent-gold text-card-dark font-button font-bold text-lg md:text-xl px-8 md:px-10 py-3 md:py-4 rounded-lg hover:opacity-90 transition-opacity"
             >
               Get Early Access
