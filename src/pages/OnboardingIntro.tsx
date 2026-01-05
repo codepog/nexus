@@ -2,8 +2,6 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 // Import assets
-import fountainSvg from "@/assets/fountain.svg";
-import quadSvg from "@/assets/quad.svg";
 import huskySrc from "@/assets/husky.png";
 import departmentsBadge from "@/assets/departments-badge-new.png";
 import sportsBadge from "@/assets/sports-badge-new.png";
@@ -39,19 +37,7 @@ const OnboardingIntro = () => {
       {/* Hero Section with Background */}
       <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
         {/* Background */}
-        <div className="absolute inset-0 bg-primary">
-          <img
-            src={fountainSvg}
-            alt=""
-            className="absolute top-0 left-0 w-full h-auto opacity-60"
-          />
-          <img
-            src={quadSvg}
-            alt=""
-            className="absolute bottom-0 left-0 w-full h-auto opacity-40"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/50 to-primary" />
-        </div>
+        <div className="absolute inset-0 bg-primary" />
 
         {/* Hero Content */}
         <div className="relative z-10 container mx-auto px-6 py-16 flex flex-col lg:flex-row items-center gap-8">
@@ -71,7 +57,7 @@ const OnboardingIntro = () => {
 
             {/* Continue Button in Hero */}
             <Link
-              to="/onboarding/events"
+              to="/events"
               className="inline-block bg-accent-gold text-card-dark font-button font-bold text-xl px-10 py-4 rounded-lg hover:opacity-90 transition-opacity shadow-lg"
             >
               Continue
@@ -164,7 +150,7 @@ const OnboardingIntro = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Link
-              to="/onboarding/events"
+              to="/events"
               className="inline-block bg-accent-gold text-card-dark font-button font-bold text-xl px-12 py-4 rounded-lg hover:opacity-90 transition-opacity shadow-lg"
             >
               Continue
