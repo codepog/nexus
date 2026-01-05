@@ -17,8 +17,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/onboarding" element={<OnboardingIntro />} />
+          <Route path="/" element={<OnboardingIntro />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/onboarding/events" element={<OnboardingEvents />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
