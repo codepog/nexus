@@ -16,8 +16,7 @@ import {
 
 // Import assets
 import mainPageScreenshotSrc from "@/assets/main_page_screenshot.png";
-import eventsPageScreenshotSrc from "@/assets/events_page_screenshot.png";
-import chatbotScreenshotSrc from "@/assets/chatbot_screenshot.png";
+import homeCroppedSrc from "@/assets/home cropped 1.png";
 import phoneMockupSrc from "@/assets/phone-mockup.png";
 import googlePlayBadge from "@/assets/google-play-badge.png";
 import appStoreBadge from "@/assets/app-store-badge.png";
@@ -87,71 +86,90 @@ const Landing = () => {
 
       {/* Dark Purple Container - wraps all content below hero */}
       <div className="px-4 md:px-8 lg:px-12">
-      <div className="mx-auto bg-card-dark rounded-[2rem] relative z-20 pb-40 md:pb-48 max-w-6xl">
-        {/* Feature Cards Section */}
-        <section className="relative py-12 md:py-20">
+      <div className="mx-auto bg-card-dark rounded-[2rem] relative z-20 pb-32 md:pb-40 max-w-6xl">
+        {/* With Wick for UW Section */}
+        <section className="relative py-12 md:py-16">
           <div className="container mx-auto px-4 md:px-6">
-          {/* Feature Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            {/* Get and Stay on Track */}
-            <motion.div
-              className="text-center px-4"
-              initial={{ opacity: 0, y: 30 }}
+            {/* Header */}
+            <motion.div 
+              className="text-center mb-10 md:mb-16"
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <span className="text-5xl mb-6 block">✅</span>
-              <h3 className="font-heading text-2xl md:text-3xl text-white mb-4">
-                Get and Stay on Track
-              </h3>
-              <p className="font-body text-white/80 text-lg">
-                Wick helps you learn to plan and organize while reminding you of everything.
-                Sync your Canvas, and calendars and never miss an assignment!
+              <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-white mb-4">
+                With Wick for UW
+              </h2>
+              <p className="font-body text-white/80 text-base md:text-lg max-w-3xl mx-auto">
+                Stay on top of your coursework AND campus life. With Canvas synced for assignments and one-tap event subscriptions for UW clubs, sports, activities, and departments, Wick for UW helps you balance academics with the experiences that make college worth it.
               </p>
             </motion.div>
 
-            {/* Find your Activities */}
-            <motion.div
-              className="text-center px-4"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <span className="text-5xl mb-6 block">📅</span>
-              <h3 className="font-heading text-2xl md:text-3xl text-white mb-4">
-                Find your Activities and Communities
-              </h3>
-              <p className="font-body text-white/80 text-lg">
-                Subscribe to your interests, sports, clubs, and departments to never miss
-                an important event, and find new communities to be apart of!
-              </p>
-            </motion.div>
+            {/* Two Column Layout - Steps + Phone Screenshot */}
+            <div className="flex flex-col lg:flex-row gap-8 md:gap-12 items-center">
+              {/* Left - 3 Steps */}
+              <motion.div 
+                className="flex-1 space-y-8 text-center lg:text-left"
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                {/* Step 1 */}
+                <div>
+                  <span className="text-4xl mb-3 block">✅</span>
+                  <h3 className="font-heading text-xl md:text-2xl text-white mb-2">
+                    1. Join Wick
+                  </h3>
+                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto lg:mx-0">
+                    Wick is a free tool that helps you plan, and organize your time and commitments while holding you accountable to get things done.
+                  </p>
+                </div>
 
-            {/* Free Early Access */}
-            <motion.div
-              className="text-center px-4"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <span className="text-5xl mb-6 block">💸</span>
-              <h3 className="font-heading text-2xl md:text-3xl text-white mb-4">
-                Free Early Access
-              </h3>
-              <p className="font-body text-white/80 text-lg">
-                We're trying to make this the best product ever for students. All we ask
-                is you use it a lot, and tell us what you like (or don't like!)
-              </p>
-            </motion.div>
-          </div>
+                {/* Step 2 */}
+                <div>
+                  <span className="text-4xl mb-3 block">🔗</span>
+                  <h3 className="font-heading text-xl md:text-2xl text-white mb-2">
+                    2. Connect Canvas
+                  </h3>
+                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto lg:mx-0">
+                    Connect Canvas during onboarding, and Wick will make sure you never miss a deadline or assignment again!
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div>
+                  <span className="text-4xl mb-3 block">🎉</span>
+                  <h3 className="font-heading text-xl md:text-2xl text-white mb-2">
+                    3. Your UW Hub
+                  </h3>
+                  <p className="font-body text-white/80 text-sm md:text-base max-w-sm mx-auto lg:mx-0">
+                    Subscribe to your UW sports, clubs, and departments to never miss an important event and find new communities. All your UW needs, now in one place!
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Right - Phone Screenshot */}
+              <motion.div 
+                className="flex-1 flex justify-center"
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <img
+                  src={homeCroppedSrc}
+                  alt="Wick Home Screen"
+                  className="w-full max-w-xs md:max-w-sm rounded-2xl md:rounded-3xl shadow-2xl"
+                />
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        {/* App Screenshot - Full Width */}
-        <div className="px-4 md:px-6">
+        {/* Main App Screenshot - Full Width */}
+        <div className="px-4 md:px-6 py-4 md:py-8">
           <motion.img
             src={mainPageScreenshotSrc}
             alt="Wick App Screenshot"
@@ -162,89 +180,6 @@ const Landing = () => {
             transition={{ duration: 0.6 }}
           />
         </div>
-
-        {/* Feature Descriptions Section with Screenshots */}
-        <section className="relative py-12 md:py-20">
-          <div className="container mx-auto px-4 md:px-6">
-            {/* Desktop: Two columns (images left, text right) */}
-            {/* Mobile: Text first, then images below */}
-            <div className="flex flex-col-reverse lg:flex-row gap-8 md:gap-12 items-start">
-              {/* Screenshots - Shows second on mobile (due to flex-col-reverse), left on desktop */}
-              <motion.div 
-                className="flex-1 w-full lg:w-auto"
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                {/* Mobile: Stacked vertically smaller, Desktop: Overlapping */}
-                <div className="flex flex-col gap-4 lg:relative lg:min-h-[500px]">
-                  {/* Events Page Screenshot */}
-                  <img
-                    src={eventsPageScreenshotSrc}
-                    alt="Events Page Screenshot"
-                    className="w-[80%] mx-auto lg:mx-0 lg:absolute lg:top-0 lg:right-0 lg:w-[65%] rounded-xl md:rounded-2xl shadow-2xl lg:z-10"
-                  />
-                  {/* Chatbot Screenshot */}
-                  <img
-                    src={chatbotScreenshotSrc}
-                    alt="Chatbot Screenshot"
-                    className="w-[70%] mx-auto lg:mx-0 lg:absolute lg:top-[180px] lg:left-0 lg:w-[55%] rounded-xl md:rounded-2xl shadow-2xl lg:z-20"
-                  />
-                </div>
-              </motion.div>
-
-              {/* Text Descriptions - Shows first on mobile, right on desktop */}
-              <motion.div 
-                className="flex-1 space-y-8 md:space-y-10"
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div>
-                  <h3 className="font-heading text-2xl md:text-3xl text-white mb-3 md:mb-4">
-                    Personalize your experience
-                  </h3>
-                  <p className="font-body text-white/80 text-base md:text-lg">
-                    Find your clubs, sports, and other interests within Wick to keep track of
-                    everything, all in one place. Subscribe to automatically have events in your
-                    calendar, so you never miss a meeting or the big game.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading text-2xl md:text-3xl text-white mb-3 md:mb-4">
-                    You are always in control
-                  </h3>
-                  <p className="font-body text-white/80 text-base md:text-lg">
-                    Wick offers personalized guidance and reminders to help you plan what you
-                    need to do. You're always in control, don't like a suggestion? Change it!
-                    It's like having a 24/7 coach keeping you on top of everything.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-heading text-2xl md:text-3xl text-white mb-3 md:mb-4">
-                    Planning your days & weeks
-                  </h3>
-                  <p className="font-body text-white/80 text-base md:text-lg">
-                    Wick helps you break down big tasks into manageable steps, set priorities,
-                    and keep deadlines in check. No more feeling overwhelmed over what to do
-                    and when to do it.
-                  </p>
-                </div>
-
-                <a
-                  href="https://max.maximallearning.com/auth/signup?uni=uw.edu"
-                  className="inline-block bg-accent-gold text-card-dark font-button font-bold text-lg md:text-xl px-6 md:px-8 py-3 md:py-4 rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  Get Early Access
-                </a>
-              </motion.div>
-            </div>
-          </div>
-        </section>
 
       </div>
       </div>
@@ -388,9 +323,6 @@ const Landing = () => {
             </div>
           </div>
         </footer>
-        
-        {/* Dark Bottom Bar */}
-        <div className="bg-[#1a1a2e] h-8 rounded-b-lg" />
       </div>
       </div>
     </div>
