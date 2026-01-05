@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, Search, X, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Copy, Check, Search, X } from "lucide-react";
 import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, fetchEventsByDescription, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major, type AcademicEvent } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -557,21 +556,6 @@ const OnboardingEvents = () => {
       }}
     >
       <div className="container max-w-4xl mx-auto px-6 py-12 relative z-10">
-        {/* Back Button */}
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-        >
-          <Link
-            to="/onboarding"
-            className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Wick
-          </Link>
-        </motion.div>
-
         {/* Progress Bar/Accent at Top */}
         <motion.div
           className="w-24 h-2 bg-primary mx-auto mb-8 rounded-full"
