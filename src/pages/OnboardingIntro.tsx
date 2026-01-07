@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 // Import assets
 import huskySrc from "@/assets/husky.png";
@@ -10,6 +10,14 @@ import onboardingScreenshot from "@/assets/onboarding-screenshot.png";
 import calendarPreview from "@/assets/calendar-preview.png";
 
 const OnboardingIntro = () => {
+  const [searchParams] = useSearchParams();
+  const redirectUri = searchParams.get("redirect_uri") || searchParams.get("redirect-url");
+  
+  // Build the events URL with redirect_uri preserved
+  const eventsUrl = redirectUri 
+    ? `/events?redirect_uri=${encodeURIComponent(redirectUri)}`
+    : "/events";
+
   // Category cards data
   const categoryCards = [
     {
@@ -57,7 +65,7 @@ const OnboardingIntro = () => {
 
             {/* Continue Button in Hero */}
             <Link
-              to="/events"
+              to={eventsUrl}
               className="inline-block bg-accent-gold text-card-dark font-button font-bold text-xl px-10 py-4 rounded-lg hover:opacity-90 transition-opacity shadow-lg"
             >
               Continue
@@ -150,7 +158,7 @@ const OnboardingIntro = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Link
-              to="/events"
+              to={eventsUrl}
               className="inline-block bg-accent-gold text-card-dark font-button font-bold text-xl px-12 py-4 rounded-lg hover:opacity-90 transition-opacity shadow-lg"
             >
               Continue
