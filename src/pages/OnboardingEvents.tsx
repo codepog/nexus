@@ -316,12 +316,13 @@ const OnboardingEvents = () => {
     return items.sort((a, b) => a.label.localeCompare(b.label));
   }, [filteredMajors, filteredAcademics, filteredEvents, selectedCategory]);
 
-  // Check for redirect-url, redirect_uri, and ics_url parameters on load
+  // Check for redirect-url, redirect_uri, and ics_url/ics-url parameters on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // Check for redirect-url first (new format), then redirect_uri (backward compatibility)
     const uri = params.get("redirect-url") || params.get("redirect_uri");
-    const icsUrlParam = params.get("ics_url");
+    // Support both ics-url (hyphen) and ics_url (underscore) for compatibility
+    const icsUrlParam = params.get("ics-url") || params.get("ics_url");
     
     console.log("URL Parameters:", { uri, icsUrlParam, allParams: Object.fromEntries(params) });
     
