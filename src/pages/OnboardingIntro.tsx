@@ -12,11 +12,17 @@ import calendarPreview from "@/assets/calendar-preview.png";
 const OnboardingIntro = () => {
   const [searchParams] = useSearchParams();
   const redirectUri = searchParams.get("redirect_uri") || searchParams.get("redirect-url");
-  
-  // Build the events URL with redirect_uri preserved
-  const eventsUrl = redirectUri 
-    ? `/events?redirect_uri=${encodeURIComponent(redirectUri)}`
-    : "/events";
+  const icsUrl = searchParams.get("ics_url") || searchParams.get("ics-url");
+
+  // Build the events URL with redirect_uri and ics_url preserved
+  const buildEventsUrl = () => {
+    const params = new URLSearchParams();
+    if (redirectUri) params.set("redirect_uri", redirectUri);
+    if (icsUrl) params.set("ics_url", icsUrl);
+    const queryString = params.toString();
+    return queryString ? `/events?${queryString}` : "/events";
+  };
+  const eventsUrl = buildEventsUrl();
 
   // Category cards data
   const categoryCards = [
