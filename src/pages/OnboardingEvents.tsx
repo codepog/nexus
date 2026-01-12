@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, fetchEventsByDescription, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major, type AcademicEvent } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 type EventCategory = "sports" | "clubs" | "majors" | "academics";
 
@@ -77,7 +76,6 @@ const OnboardingEvents = () => {
   const [icsUrl, setIcsUrl] = useState<string | null>(null);
   const [existingToken, setExistingToken] = useState<string | null>(null);
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
   const [majors, setMajors] = useState<Major[]>([]);
@@ -466,15 +464,15 @@ const OnboardingEvents = () => {
           }, 1000);
           return;
         } else {
-          // Debug mode: no redirect URI, so just show informational message
-          console.log("No redirect URI found, cannot redirect");
+          // No redirect URI - redirect to UW school page
           toast({
-            title: existingToken ? "Preferences cleared! 🎉" : "No preferences selected",
-            description: existingToken 
-              ? "All preferences have been removed from Supabase."
-              : "In production with a redirect URL, this would redirect with ics_url= parameter.",
+            title: existingToken ? "Preferences cleared! 🎉" : "Redirecting...",
+            description: "Taking you to Wick...",
           });
-          setIsLoading(false);
+
+          setTimeout(() => {
+            window.location.href = "https://wick.app/schools/university-of-washington";
+          }, 1000);
           return;
         }
       }
@@ -510,12 +508,15 @@ const OnboardingEvents = () => {
           window.location.href = finalRedirectUrl;
         }, 1000);
       } else {
-        // Debug mode: show the ICS URL in the text field
+        // No redirect URI - redirect to UW school page
         toast({
           title: existingToken ? "Preferences updated! 🎉" : "Calendar synced! 🎉",
-          description: "Your ICS URL is ready below.",
+          description: "Taking you to Wick...",
         });
-        setIsLoading(false);
+
+        setTimeout(() => {
+          window.location.href = "https://wick.app/schools/university-of-washington";
+        }, 1000);
       }
     } catch (error: any) {
       console.error("Error during sync:", error);
@@ -556,10 +557,10 @@ const OnboardingEvents = () => {
         backgroundAttachment: 'fixed',
       }}
     >
-      <div className="container max-w-4xl mx-auto px-6 py-12 relative z-10">
+      <div className="container max-w-4xl mx-auto px-4 py-6 md:px-6 md:py-12 relative z-10">
         {/* Progress Bar/Accent at Top */}
         <motion.div
-          className="w-24 h-2 bg-primary mx-auto mb-8 rounded-full"
+          className="w-24 h-2 bg-primary mx-auto mb-4 md:mb-8 rounded-full"
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.5 }}
@@ -567,31 +568,31 @@ const OnboardingEvents = () => {
 
         {/* Header */}
         <motion.div
-          className="text-center mb-10"
+          className="text-center mb-6 md:mb-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <h1 className="text-4xl font-bold mb-4 text-foreground">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4 text-foreground">
             Subscribe to Campus Events
           </h1>
-          <p className="text-base text-foreground/90 max-w-2xl mx-auto">
+          <p className="text-sm md:text-base text-foreground/90 max-w-2xl mx-auto">
             Get campus event automatically sourced onto your calendar! Just select the majors, sports, clubs or other on campus activities to subscribe to. You can always change this later in settings.
           </p>
         </motion.div>
 
         {/* Category Filter Buttons */}
         <motion.div
-          className="mb-8"
+          className="mb-4 md:mb-8"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex gap-3 justify-center overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex gap-2 md:gap-3 justify-center overflow-x-auto scrollbar-hide pb-1">
             <motion.button
               onClick={() => setSelectedCategory("all")}
               className={`
-                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                flex-shrink-0 px-4 py-2 md:px-6 md:py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "all"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -606,7 +607,7 @@ const OnboardingEvents = () => {
             <motion.button
               onClick={() => setSelectedCategory("majors")}
               className={`
-                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                flex-shrink-0 px-4 py-2 md:px-6 md:py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "majors"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -621,7 +622,7 @@ const OnboardingEvents = () => {
             <motion.button
               onClick={() => setSelectedCategory("academics")}
               className={`
-                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                flex-shrink-0 px-4 py-2 md:px-6 md:py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "academics"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -636,7 +637,7 @@ const OnboardingEvents = () => {
             <motion.button
               onClick={() => setSelectedCategory("sports")}
               className={`
-                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                flex-shrink-0 px-4 py-2 md:px-6 md:py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "sports"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -651,7 +652,7 @@ const OnboardingEvents = () => {
             <motion.button
               onClick={() => setSelectedCategory("clubs")}
               className={`
-                flex-shrink-0 px-6 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap
+                flex-shrink-0 px-4 py-2 md:px-6 md:py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap
                 ${
                   selectedCategory === "clubs"
                     ? "bg-primary text-primary-foreground shadow-md"
@@ -668,16 +669,16 @@ const OnboardingEvents = () => {
 
         {/* Search Bar */}
         <motion.div
-          className="mb-6 flex justify-center"
+          className="mb-4 md:mb-6 flex justify-center"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
           <div className="relative w-full max-w-2xl">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-foreground/60" />
+            <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-foreground/60" />
             <Input
               type="text"
-              placeholder="Search events to auto-sync in your calendar"
+              placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -686,7 +687,7 @@ const OnboardingEvents = () => {
                   setSelectedCategory("all");
                 }
               }}
-              className="w-full bg-[hsl(270_30%_15%)] border-border text-center text-foreground placeholder:text-foreground/60 py-3 pl-12 pr-10"
+              className="w-full bg-[hsl(270_30%_15%)] border-border text-foreground placeholder:text-foreground/60 py-2.5 md:py-3 pl-10 md:pl-12 pr-10 text-sm md:text-base"
             />
             {searchQuery && (
               <button
@@ -703,13 +704,13 @@ const OnboardingEvents = () => {
         {/* Selected Events Pills */}
         {selectedEvents.size > 0 && (
           <motion.div
-            className="mb-6"
+            className="mb-4 md:mb-6"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            <div className="bg-background/30 backdrop-blur-sm rounded-lg p-3 border border-border/50">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <div className="bg-background/30 backdrop-blur-sm rounded-lg p-2 md:p-3 border border-border/50">
+              <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide">
                 <motion.button
                   onClick={() => setSelectedEvents(new Set())}
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -791,12 +792,12 @@ const OnboardingEvents = () => {
 
         {/* Event Selection Table */}
         <motion.div
-          className="mb-8"
+          className="mb-4 md:mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="max-h-[350px] overflow-y-auto scrollbar-visible">
+          <div className="max-h-[50vh] md:max-h-[350px] overflow-y-auto scrollbar-visible">
             {/* Table Rows */}
             <div className="space-y-2">
               {selectedCategory === "majors" ? (
@@ -851,7 +852,7 @@ const OnboardingEvents = () => {
                         key={major.name}
                         onClick={() => toggleMajor(majorId)}
                         className={`
-                          w-full grid grid-cols-[1fr_auto] gap-4 px-4 py-4 rounded-lg transition-all text-left
+                          w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
                           ${
                             selectedEvents.has(majorId)
                               ? "bg-primary/20 border-2 border-primary"
@@ -862,8 +863,8 @@ const OnboardingEvents = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.03 }}
                       >
-                        <div className="font-medium text-foreground">{major.name}</div>
-                        <div className="text-foreground/70 text-right">Department</div>
+                        <div className="font-medium text-foreground text-sm md:text-base">{major.name}</div>
+                        <div className="text-foreground/70 text-right text-xs md:text-sm">Department</div>
                       </motion.button>
                     );
                   })
@@ -918,7 +919,7 @@ const OnboardingEvents = () => {
                       key={academic.id}
                       onClick={() => toggleEvent(academic.topic_id)}
                       className={`
-                        w-full grid grid-cols-[1fr_auto] gap-4 px-4 py-4 rounded-lg transition-all text-left
+                        w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
                         ${
                           selectedEvents.has(academic.topic_id)
                             ? "bg-primary/20 border-2 border-primary"
@@ -929,8 +930,8 @@ const OnboardingEvents = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
                     >
-                      <div className="font-medium text-foreground">{academic.topic_id}</div>
-                      <div className="text-foreground/70 text-right">Academics</div>
+                      <div className="font-medium text-foreground text-sm md:text-base">{academic.topic_id}</div>
+                      <div className="text-foreground/70 text-right text-xs md:text-sm">Academics</div>
                     </motion.button>
                   ))
                 )
@@ -984,7 +985,7 @@ const OnboardingEvents = () => {
                       key={item.id}
                       onClick={() => item.isMajor ? toggleMajor(item.id) : toggleEvent(item.id)}
                       className={`
-                        w-full grid grid-cols-[1fr_auto] gap-4 px-4 py-4 rounded-lg transition-all text-left
+                        w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
                         ${
                           selectedEvents.has(item.id)
                             ? "bg-primary/20 border-2 border-primary"
@@ -995,8 +996,8 @@ const OnboardingEvents = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
                     >
-                      <div className="font-medium text-foreground">{item.label}</div>
-                      <div className="text-foreground/70 text-right">{item.grouping}</div>
+                      <div className="font-medium text-foreground text-sm md:text-base">{item.label}</div>
+                      <div className="text-foreground/70 text-right text-xs md:text-sm">{item.grouping}</div>
                     </motion.button>
                   ))
                 )
@@ -1037,7 +1038,7 @@ const OnboardingEvents = () => {
                       key={event.id}
                       onClick={() => toggleEvent(event.id)}
                       className={`
-                        w-full grid grid-cols-[1fr_auto] gap-4 px-4 py-4 rounded-lg transition-all text-left
+                        w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
                         ${
                           selectedEvents.has(event.id)
                             ? "bg-primary/20 border-2 border-primary"
@@ -1048,8 +1049,8 @@ const OnboardingEvents = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
                     >
-                      <div className="font-medium text-foreground">{event.label}</div>
-                      <div className="text-foreground/70 text-right">{getEventGrouping(event, false)}</div>
+                      <div className="font-medium text-foreground text-sm md:text-base">{event.label}</div>
+                      <div className="text-foreground/70 text-right text-xs md:text-sm">{getEventGrouping(event, false)}</div>
                     </motion.button>
                   ))
                 )
@@ -1099,53 +1100,6 @@ const OnboardingEvents = () => {
           </motion.button>
         </motion.div>
 
-        {/* ICS URL Display */}
-        {icsUrl && (
-          <motion.div
-            className="mt-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Your Calendar Feed URL
-            </label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={icsUrl}
-                readOnly
-                className="flex-1 font-mono text-sm bg-background/50 border-border"
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-              />
-              <Button
-                variant="outline"
-                size="default"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(icsUrl);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                className="shrink-0"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Use this URL to subscribe to your calendar feed in any calendar application.
-            </p>
-          </motion.div>
-        )}
       </div>
     </div>
   );
