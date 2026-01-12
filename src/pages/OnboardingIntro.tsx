@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 
 // Import assets
 import huskySrc from "@/assets/husky.png";
@@ -11,6 +12,7 @@ import calendarPreview from "@/assets/calendar-preview.png";
 
 const OnboardingIntro = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const redirectUri = searchParams.get("redirect_uri") || searchParams.get("redirect-url");
   const icsUrl = searchParams.get("ics_url") || searchParams.get("ics-url");
 
@@ -23,6 +25,13 @@ const OnboardingIntro = () => {
     return queryString ? `/events?${queryString}` : "/events";
   };
   const eventsUrl = buildEventsUrl();
+
+  // Skip intro for returning users (those with an existing ics_url)
+  useEffect(() => {
+    if (icsUrl) {
+      navigate(eventsUrl, { replace: true });
+    }
+  }, [icsUrl, eventsUrl, navigate]);
 
   // Category cards data
   const categoryCards = [

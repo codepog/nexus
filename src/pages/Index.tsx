@@ -733,7 +733,7 @@ const Index = () => {
                 </>
               ) : (
                 <>
-                  Back to Wick
+                  Continue
                 </>
               )}
             </span>

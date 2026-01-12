@@ -77,6 +77,47 @@ function extractTZID(line: string): string | null {
 }
 
 /**
+ * Gets the timezone offset in minutes for a given timezone at a reference date.
+ */
+function getTimezoneOffsetMinutes(timezone: string, refDate: Date): number {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    const parts = formatter.formatToParts(refDate);
+    const get = (type: string) => {
+      const part = parts.find(p => p.type === type);
+      return part ? parseInt(part.value, 10) : 0;
+    };
+
+    let hour = get('hour');
+    if (hour === 24) hour = 0;
+
+    const tzDate = Date.UTC(
+      get('year'),
+      get('month') - 1,
+      get('day'),
+      hour,
+      get('minute'),
+      get('second')
+    );
+
+    return (refDate.getTime() - tzDate) / (60 * 1000);
+  } catch (e) {
+    console.warn(`Failed to get offset for timezone ${timezone}:`, e);
+    return 0;
+  }
+}
+
+/**
  * Parses RRULE string and extracts frequency and until date
  */
 function parseRRule(rruleStr: string): { frequency: string | null; until: string | null } {
@@ -85,44 +126,29 @@ function parseRRule(rruleStr: string): { frequency: string | null; until: string
     until: null
   };
 
-  // Extract FREQ
   const freqMatch = rruleStr.match(/FREQ=([A-Z]+)/i);
   if (freqMatch) {
     result.frequency = freqMatch[1].toUpperCase();
   }
 
-  // Extract UNTIL
   const untilMatch = rruleStr.match(/UNTIL=([0-9TZ]+)/i);
   if (untilMatch) {
-    const untilStr = untilMatch[1];
-    const untilDate = parseICSDate(untilStr);
+    const untilDate = parseICSDate(untilMatch[1]);
     if (untilDate) {
       result.until = untilDate.toISOString();
     }
   }
 
-  // If no UNTIL, check for COUNT (we'll calculate an approximate end date)
   if (!result.until && result.frequency) {
     const countMatch = rruleStr.match(/COUNT=(\d+)/i);
     if (countMatch) {
       const count = parseInt(countMatch[1], 10);
-      // Approximate: calculate end date based on frequency and count
-      // This is a rough estimate; for precise handling, you'd need the start date
-      const now = new Date();
-      let endDate = new Date(now);
+      const endDate = new Date();
       switch (result.frequency) {
-        case 'DAILY':
-          endDate.setDate(endDate.getDate() + count);
-          break;
-        case 'WEEKLY':
-          endDate.setDate(endDate.getDate() + count * 7);
-          break;
-        case 'MONTHLY':
-          endDate.setMonth(endDate.getMonth() + count);
-          break;
-        case 'YEARLY':
-          endDate.setFullYear(endDate.getFullYear() + count);
-          break;
+        case 'DAILY': endDate.setDate(endDate.getDate() + count); break;
+        case 'WEEKLY': endDate.setDate(endDate.getDate() + count * 7); break;
+        case 'MONTHLY': endDate.setMonth(endDate.getMonth() + count); break;
+        case 'YEARLY': endDate.setFullYear(endDate.getFullYear() + count); break;
       }
       result.until = endDate.toISOString();
     }
@@ -136,10 +162,10 @@ function parseRRule(rruleStr: string): { frequency: string | null; until: string
  */
 function parseICS(icsText: string, sourceName: string): CalendarEvent[] {
   const events: CalendarEvent[] = [];
-
+  
   // Normalize line endings (handle both \r\n and \n)
   const normalizedText = icsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
+  
   // Split by VEVENT blocks - handle both \n and \r\n line endings
   const veventMatches = normalizedText.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
   if (!veventMatches || veventMatches.length === 0) {
@@ -186,64 +212,63 @@ function parseICS(icsText: string, sourceName: string): CalendarEvent[] {
         event.location = unescapeICSText(locationMatch[1].trim());
       }
 
-      // Extract DTSTART - handle VALUE=DATE parameter and timezone
-      const dtstartLineMatch = veventBlock.match(/DTSTART[^:\r\n]*:([^\r\n]+)/i);
-      if (dtstartLineMatch) {
-        const fullLine = dtstartLineMatch[0];
-        const dtstartStr = dtstartLineMatch[1].trim();
-        const tzid = extractTZID(fullLine);
-        const isDateOnly = fullLine.includes('VALUE=DATE') || (dtstartStr.length === 8 && !dtstartStr.includes('T'));
+              // Extract DTSTART - handle VALUE=DATE parameter and timezone
+        const dtstartLineMatch = veventBlock.match(/DTSTART[^:\r\n]*:([^\r\n]+)/i);
+        if (dtstartLineMatch) {
+          const fullLine = dtstartLineMatch[0];
+          const dtstartStr = dtstartLineMatch[1].trim();
+          const tzid = extractTZID(fullLine);
+          const isDateOnly = fullLine.includes('VALUE=DATE') || (dtstartStr.length === 8 && !dtstartStr.includes('T'));
 
-        if (isDateOnly) {
-          const startDate = parseICSDate(dtstartStr);
-          if (startDate) {
-            event.event_date = formatDateOnly(startDate);
-            event.time_tbd = true;
+          if (isDateOnly) {
+            const startDate = parseICSDate(dtstartStr);
+            if (startDate) {
+              event.event_date = formatDateOnly(startDate);
+              event.time_tbd = true;
+            }
+          } else {
+            const startDate = parseICSDate(dtstartStr, tzid || undefined);
+            if (startDate) {
+              event.start_time = startDate.toISOString();
+            } else {
+              console.warn(`Failed to parse DTSTART for event ${i} in ${sourceName}: ${dtstartStr}`);
+            }
           }
         } else {
-          // Pass timezone to parseICSDate for proper conversion
-          const startDate = parseICSDate(dtstartStr, tzid || undefined);
-          if (startDate) {
-            event.start_time = startDate.toISOString();
-          } else {
-            console.warn(`Failed to parse DTSTART for event ${i} in ${sourceName}: ${dtstartStr}`);
+          console.warn(`No DTSTART found for event ${i} in ${sourceName}`);
+        }
+
+        // Extract DTEND - handle VALUE=DATE parameter and timezone
+        const dtendLineMatch = veventBlock.match(/DTEND[^:\r\n]*:([^\r\n]+)/i);
+        if (dtendLineMatch && !event.time_tbd) {
+          const fullLine = dtendLineMatch[0];
+          const dtendStr = dtendLineMatch[1].trim();
+          const tzid = extractTZID(fullLine);
+
+          const endDate = parseICSDate(dtendStr, tzid || undefined);
+          if (endDate) {
+            event.end_time = endDate.toISOString();
           }
         }
-      } else {
-        console.warn(`No DTSTART found for event ${i} in ${sourceName}`);
-      }
 
-      // Extract DTEND - handle VALUE=DATE parameter and timezone
-      const dtendLineMatch = veventBlock.match(/DTEND[^:\r\n]*:([^\r\n]+)/i);
-      if (dtendLineMatch && !event.time_tbd) {
-        const fullLine = dtendLineMatch[0];
-        const dtendStr = dtendLineMatch[1].trim();
-        const tzid = extractTZID(fullLine);
-
-        const endDate = parseICSDate(dtendStr, tzid || undefined);
-        if (endDate) {
-          event.end_time = endDate.toISOString();
-        }
-      }
-
-      // Extract RRULE for recurring events
-      const rruleMatch = veventBlock.match(/RRULE[^:\r\n]*:([^\r\n]+)/i);
-      if (rruleMatch) {
-        const rruleStr = rruleMatch[1].trim();
-        const { frequency, until } = parseRRule(rruleStr);
-        if (frequency) {
-          event.recurrence_frequency = frequency;
-          if (until) {
-            event.recurrence_until = until;
-          } else {
-            // Default: recur for 1 year if no UNTIL specified
-            const defaultEnd = new Date();
-            defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
-            event.recurrence_until = defaultEnd.toISOString();
+        // Extract RRULE for recurring events
+        const rruleMatch = veventBlock.match(/RRULE[^:\r\n]*:([^\r\n]+)/i);
+        if (rruleMatch) {
+          const rruleStr = rruleMatch[1].trim();
+          const { frequency, until } = parseRRule(rruleStr);
+          if (frequency) {
+            event.recurrence_frequency = frequency;
+            if (until) {
+              event.recurrence_until = until;
+            } else {
+              const defaultEnd = new Date();
+              defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
+              event.recurrence_until = defaultEnd.toISOString();
+            }
+            console.log(`Parsed recurring event: ${event.title} - ${frequency} until ${event.recurrence_until}`);
           }
-          console.log(`Parsed recurring event: ${event.title} - ${frequency} until ${event.recurrence_until}`);
         }
-      }
+
 
       // Only add event if it has at least a start time or date
       if (event.start_time || event.event_date) {
@@ -271,104 +296,14 @@ function unescapeICSText(text: string): string {
     .replace(/\\\\/g, "\\");
 }
 
-/**
- * Gets the timezone offset in minutes for a given timezone at a reference date.
- * Returns positive value if timezone is behind UTC (west), negative if ahead (east).
- */
-function getTimezoneOffsetMinutes(timezone: string, refDate: Date): number {
-  try {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-
-    const parts = formatter.formatToParts(refDate);
-    const get = (type: string) => {
-      const part = parts.find(p => p.type === type);
-      return part ? parseInt(part.value, 10) : 0;
-    };
-
-    // Handle midnight being represented as 24:00
-    let hour = get('hour');
-    if (hour === 24) hour = 0;
-
-    const tzDate = Date.UTC(
-      get('year'),
-      get('month') - 1,
-      get('day'),
-      hour,
-      get('minute'),
-      get('second')
-    );
-
-    // Positive offset means timezone is behind UTC (e.g., America/Los_Angeles = +480 in winter)
-    return (refDate.getTime() - tzDate) / (60 * 1000);
-  } catch (e) {
-    console.warn(`Failed to get offset for timezone ${timezone}:`, e);
-    return 0; // Assume UTC if timezone is invalid
-  }
-}
-
-/**
- * Parses an ICS datetime string with a specific timezone and converts to UTC
- */
-function parseICSDateWithTimezone(dateStr: string, timezone: string): Date | null {
-  try {
-    dateStr = dateStr.trim();
-
-    // Parse the components (expecting YYYYMMDDTHHMMSS format)
-    if (dateStr.length < 15 || !dateStr.includes('T')) {
-      console.warn(`Invalid datetime format for timezone parsing: ${dateStr}`);
-      return null;
-    }
-
-    const year = parseInt(dateStr.substring(0, 4));
-    const month = parseInt(dateStr.substring(4, 6)) - 1;
-    const day = parseInt(dateStr.substring(6, 8));
-    const hours = parseInt(dateStr.substring(9, 11) || "0");
-    const minutes = parseInt(dateStr.substring(11, 13) || "0");
-    const seconds = parseInt(dateStr.substring(13, 15) || "0");
-
-    // Create a UTC date treating the components as UTC (this is "wrong" by the offset)
-    const asUtc = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-
-    // Get the offset at this approximate time
-    const offsetMinutes = getTimezoneOffsetMinutes(timezone, asUtc);
-
-    // Add the offset to convert from local timezone to UTC
-    const result = new Date(asUtc.getTime() + offsetMinutes * 60 * 1000);
-
-    if (isNaN(result.getTime())) {
-      console.warn(`Invalid datetime after timezone conversion: ${dateStr} in ${timezone}`);
-      return null;
-    }
-
-    return result;
-  } catch (error) {
-    console.error(`Error parsing ICS date with timezone: ${dateStr}, ${timezone}`, error);
-    return null;
-  }
-}
-
-/**
- * Parses an ICS date string (YYYYMMDDTHHMMSSZ or YYYYMMDD)
- * Handles various formats including with/without timezone
- */
 function parseICSDate(dateStr: string, timezone?: string): Date | null {
   try {
-    // Remove any whitespace
     dateStr = dateStr.trim();
 
     // Handle DATE format (YYYYMMDD)
     if (dateStr.length === 8 && /^\d{8}$/.test(dateStr)) {
       const year = parseInt(dateStr.substring(0, 4));
-      const month = parseInt(dateStr.substring(4, 6)) - 1; // Month is 0-indexed
+      const month = parseInt(dateStr.substring(4, 6)) - 1;
       const day = parseInt(dateStr.substring(6, 8));
       const date = new Date(Date.UTC(year, month, day));
       if (isNaN(date.getTime())) {
@@ -378,13 +313,8 @@ function parseICSDate(dateStr: string, timezone?: string): Date | null {
       return date;
     }
 
-    // Handle DATE-TIME format (YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS)
+    // Handle DATE-TIME format
     if (dateStr.length >= 15 && dateStr.includes('T')) {
-      // If timezone is provided and date doesn't end with Z, use timezone conversion
-      if (timezone && !dateStr.endsWith('Z')) {
-        return parseICSDateWithTimezone(dateStr, timezone);
-      }
-
       const year = parseInt(dateStr.substring(0, 4));
       const month = parseInt(dateStr.substring(4, 6)) - 1;
       const day = parseInt(dateStr.substring(6, 8));
@@ -392,23 +322,24 @@ function parseICSDate(dateStr: string, timezone?: string): Date | null {
       const minutes = parseInt(dateStr.substring(11, 13) || "0");
       const seconds = parseInt(dateStr.substring(13, 15) || "0");
 
-      // If ends with Z, it's UTC; otherwise treat as UTC (floating time)
-      const date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-
-      if (isNaN(date.getTime())) {
-        console.warn(`Invalid datetime: ${dateStr}`);
-        return null;
+      // If timezone provided and not UTC, convert from that timezone
+      if (timezone && !dateStr.endsWith('Z')) {
+        const asUtc = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+        const offsetMinutes = getTimezoneOffsetMinutes(timezone, asUtc);
+        return new Date(asUtc.getTime() + offsetMinutes * 60 * 1000);
       }
-      return date;
+
+      return new Date(Date.UTC(year, month, day, hours, minutes, seconds));
     }
 
-    console.warn(`Unrecognized date format: ${dateStr} (length: ${dateStr.length})`);
+    console.warn(`Unrecognized date format: ${dateStr}`);
     return null;
   } catch (error) {
     console.error("Error parsing ICS date:", dateStr, error);
     return null;
   }
 }
+
 
 /**
  * Formats a date to YYYY-MM-DD format

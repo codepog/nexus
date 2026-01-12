@@ -734,7 +734,7 @@ const OnboardingEvents = () => {
                 </>
               ) : (
                 <>
-                  Back to Wick
+                  Continue
                 </>
               )}
             </span>
