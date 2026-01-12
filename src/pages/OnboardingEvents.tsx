@@ -464,14 +464,18 @@ const OnboardingEvents = () => {
           }, 1000);
           return;
         } else {
-          // No redirect URI - redirect to UW school page
+          // No redirect URI - use default callback
           toast({
             title: existingToken ? "Preferences cleared! 🎉" : "Redirecting...",
             description: "Taking you to Wick...",
           });
 
+          const defaultRedirect = icsUrl
+            ? `https://app.wick.app/onboarding/callback?ics_url=${encodeURIComponent(icsUrl)}`
+            : "https://app.wick.app/onboarding/callback";
+
           setTimeout(() => {
-            window.location.href = "https://wick.app/schools/university-of-washington";
+            window.location.href = defaultRedirect;
           }, 1000);
           return;
         }
@@ -508,14 +512,14 @@ const OnboardingEvents = () => {
           window.location.href = finalRedirectUrl;
         }, 1000);
       } else {
-        // No redirect URI - redirect to UW school page
+        // No redirect URI - use default callback with ICS URL
         toast({
           title: existingToken ? "Preferences updated! 🎉" : "Calendar synced! 🎉",
           description: "Taking you to Wick...",
         });
 
         setTimeout(() => {
-          window.location.href = "https://wick.app/schools/university-of-washington";
+          window.location.href = `https://app.wick.app/onboarding/callback?ics_url=${encodeURIComponent(finalIcsUrl)}`;
         }, 1000);
       }
     } catch (error: any) {
