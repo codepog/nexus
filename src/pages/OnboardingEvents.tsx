@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, fetchEventsByDescription, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major, type AcademicEvent } from "@/utils/supabaseService";
@@ -86,7 +86,30 @@ const OnboardingEvents = () => {
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const hasFetchedMajors = useRef(false);
   const hasFetchedAcademics = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number>(0);
   const { toast } = useToast();
+
+  // Prevent iOS scroll chaining - stops the gesture from being handed off to parent
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const touchY = e.touches[0].clientY;
+    const deltaY = touchStartY.current - touchY;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isAtTop = scrollTop <= 0;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight;
+
+    // Prevent scroll chaining when at boundaries
+    if ((isAtTop && deltaY < 0) || (isAtBottom && deltaY > 0)) {
+      e.preventDefault();
+    }
+  }, []);
 
   // Reset waitlist state when search query changes
   useEffect(() => {
@@ -801,7 +824,12 @@ const OnboardingEvents = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="max-h-[50vh] md:max-h-[350px] overflow-y-auto scrollbar-visible overscroll-contain touch-pan-y">
+          <div
+            ref={scrollContainerRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            className="max-h-[50vh] md:max-h-[350px] overflow-y-auto scrollbar-visible overscroll-contain"
+          >
             {/* Table Rows */}
             <div className="space-y-2">
               {selectedCategory === "majors" ? (
