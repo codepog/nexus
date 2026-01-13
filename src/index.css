@@ -105,6 +105,9 @@ All colors MUST be HSL.
   .scrollbar-visible {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) hsl(var(--muted) / 0.3);
+    /* Prevent scroll chaining to parent on mobile */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Hide scrollbar but keep scrolling */

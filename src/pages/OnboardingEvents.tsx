@@ -547,8 +547,8 @@ const OnboardingEvents = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen text-foreground relative"
+    <div
+      className="min-h-screen text-foreground relative overflow-x-hidden"
       style={{
         background: `
           radial-gradient(ellipse at 0% 0%, rgba(75, 46, 131, 0.6) 0%, transparent 50%),
@@ -801,7 +801,7 @@ const OnboardingEvents = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="max-h-[50vh] md:max-h-[350px] overflow-y-auto scrollbar-visible">
+          <div className="max-h-[50vh] md:max-h-[350px] overflow-y-auto scrollbar-visible overscroll-contain touch-pan-y">
             {/* Table Rows */}
             <div className="space-y-2">
               {selectedCategory === "majors" ? (
