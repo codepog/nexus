@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, X } from "lucide-react";
+import { Search, X, Copy, Check } from "lucide-react";
 import { savePreferencesAndGetToken, constructIcsUrl, fetchMajors, fetchEventsByDescription, extractTokenFromIcsUrl, fetchPreferencesByToken, addToEventWaitlist, type Major, type AcademicEvent } from "@/utils/supabaseService";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type EventCategory = "sports" | "clubs" | "majors" | "academics";
 
@@ -28,6 +29,7 @@ const OnboardingEvents = () => {
   const [isLoadingClubs, setIsLoadingClubs] = useState(false);
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
+  const [copied, setCopied] = useState(false);
   const hasFetchedMajors = useRef(false);
   const hasFetchedAcademics = useRef(false);
   const hasFetchedSports = useRef(false);
@@ -495,19 +497,14 @@ const OnboardingEvents = () => {
           }, 1000);
           return;
         } else {
-          // No redirect URI - use default callback
+          // Testing mode: no redirect, just show message
           toast({
-            title: existingToken ? "Preferences cleared! 🎉" : "Redirecting...",
-            description: "Taking you to Wick...",
+            title: existingToken ? "Preferences cleared! 🎉" : "No preferences selected",
+            description: existingToken
+              ? "All preferences have been removed."
+              : "Select some events to generate an ICS URL.",
           });
-
-          const defaultRedirect = icsUrl
-            ? `https://app.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(icsUrl)}`
-            : "https://app.wick.app/auth/signup?uni=uw.edu";
-
-          setTimeout(() => {
-            window.location.href = defaultRedirect;
-          }, 1000);
+          setIsLoading(false);
           return;
         }
       }
@@ -543,15 +540,12 @@ const OnboardingEvents = () => {
           window.location.href = finalRedirectUrl;
         }, 1000);
       } else {
-        // No redirect URI - use default callback with ICS URL
+        // Testing mode: show the ICS URL instead of redirecting
         toast({
           title: existingToken ? "Preferences updated! 🎉" : "Calendar synced! 🎉",
-          description: "Taking you to Wick...",
+          description: "Your ICS URL is ready below.",
         });
-
-        setTimeout(() => {
-          window.location.href = `https://app.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(finalIcsUrl)}`;
-        }, 1000);
+        setIsLoading(false);
       }
     } catch (error: any) {
       console.error("Error during sync:", error);
@@ -1291,6 +1285,73 @@ const OnboardingEvents = () => {
             </span>
           </motion.button>
         </motion.div>
+
+        {/* ICS URL Display - Testing Mode */}
+        {icsUrl && (
+          <motion.div
+            className="mt-4 mb-8 px-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Your Calendar Feed URL
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={icsUrl}
+                readOnly
+                className="flex-1 font-mono text-xs bg-background/50 border-border"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <Button
+                variant="outline"
+                size="default"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(icsUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="shrink-0"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use this URL to subscribe to your calendar feed or download it directly.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(icsUrl, '_blank')}
+              >
+                Download ICS
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const webcalUrl = icsUrl.replace(/^https?:/, 'webcal:');
+                  window.location.href = webcalUrl;
+                }}
+              >
+                Open in Calendar App
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
       </div>
     </div>
