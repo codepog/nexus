@@ -502,8 +502,8 @@ const OnboardingEvents = () => {
           });
 
           const defaultRedirect = icsUrl
-            ? `https://staging.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(icsUrl)}`
-            : "https://staging.wick.app/auth/signup?uni=uw.edu";
+            ? `https://app.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(icsUrl)}`
+            : "https://app.wick.app/auth/signup?uni=uw.edu";
 
           setTimeout(() => {
             window.location.href = defaultRedirect;
@@ -550,7 +550,7 @@ const OnboardingEvents = () => {
         });
 
         setTimeout(() => {
-          window.location.href = `https://staging.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(finalIcsUrl)}`;
+          window.location.href = `https://app.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(finalIcsUrl)}`;
         }, 1000);
       }
     } catch (error: any) {
