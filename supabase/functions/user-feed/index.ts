@@ -352,6 +352,46 @@ function formatDateOnly(date: Date): string {
 }
 
 /**
+ * Parses a database timestamp string, assuming Pacific timezone if no timezone is specified.
+ * This fixes the issue where times stored without timezone info are incorrectly treated as UTC.
+ */
+function parseDbTimestamp(timeStr: string | null | undefined): Date | null {
+  if (!timeStr) return null;
+
+  const str = timeStr.trim();
+
+  // If already has Z suffix (UTC) or timezone offset, parse directly
+  if (str.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(str)) {
+    return new Date(str);
+  }
+
+  // Otherwise assume the time is in Pacific timezone and convert to UTC
+  // Parse the date components manually to avoid browser/runtime inconsistencies
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):?(\d{2})?/);
+  if (match) {
+    const [, year, month, day, hours, minutes, seconds = "0"] = match;
+
+    // Create a date treating the input as UTC first
+    const asUtc = new Date(Date.UTC(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hours),
+      parseInt(minutes),
+      parseInt(seconds)
+    ));
+
+    // Get the Pacific timezone offset at this time and adjust
+    const pacificOffset = getTimezoneOffsetMinutes('America/Los_Angeles', asUtc);
+    return new Date(asUtc.getTime() + pacificOffset * 60 * 1000);
+  }
+
+  // Fallback: try direct parsing (may be unreliable)
+  console.warn(`Unexpected timestamp format, falling back to direct parse: ${str}`);
+  return new Date(str);
+}
+
+/**
  * Generates ICS content from calendar events
  */
 function generateICS(events: CalendarEvent[]): string {
@@ -386,9 +426,17 @@ function generateICS(events: CalendarEvent[]): string {
       isAllDay = true;
     } else if (event.start_time) {
       // Normal event with specific time
-      startDate = new Date(event.start_time);
-      endDate = event.end_time
-        ? new Date(event.end_time)
+      // Use parseDbTimestamp to handle Pacific timezone conversion for database events
+      const parsedStart = parseDbTimestamp(event.start_time);
+      if (!parsedStart) {
+        console.warn(`Failed to parse start_time for event ${event.id}: ${event.start_time}`);
+        continue;
+      }
+      startDate = parsedStart;
+
+      const parsedEnd = parseDbTimestamp(event.end_time);
+      endDate = parsedEnd
+        ? parsedEnd
         : new Date(startDate.getTime() + 60 * 60 * 1000); // Default 1 hour if no end time
     } else {
       // Fallback: skip if no valid date/time
@@ -618,6 +666,13 @@ serve(async (req) => {
       
       events = dbEvents || [];
       console.log(`Found ${events.length} events for ${topicIds.length} topics`);
+
+      // Debug: log first event's time conversion
+      if (events.length > 0 && events[0].start_time) {
+        const sample = events[0];
+        const parsed = parseDbTimestamp(sample.start_time);
+        console.log(`Sample event time conversion: "${sample.start_time}" -> ${parsed?.toISOString()} (UTC)`);
+      }
     }
 
     // Fetch and parse ICS files for selected majors
