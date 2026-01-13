@@ -7,67 +7,7 @@ import { Input } from "@/components/ui/input";
 
 type EventCategory = "sports" | "clubs" | "majors" | "academics";
 
-interface Event {
-  id: string;
-  label: string;
-  icon: string;
-  category: EventCategory;
-}
-
-// Event topics data - IDs must match topic_id values in database exactly
-// Categories should match the description column in the database
-const EVENTS: Event[] = [
-  // Clubs
-  { id: "Thucydides Society for Military History Meetings", label: "Thucydides Society for Military History Meetings", icon: "📜", category: "clubs" },
-  { id: "Women in Consulting Club Meetings", label: "Women in Consulting Club Meetings", icon: "💼", category: "clubs" },
-  { id: "League of Astronomers Club Meetings", label: "League of Astronomers Club Meetings", icon: "🔭", category: "clubs" },
-  { id: "National Society of Black Engineers Club Meetings", label: "National Society of Black Engineers Club Meetings", icon: "⚙️", category: "clubs" },
-  { id: "Christians in Seattle Meetings", label: "Christians in Seattle Meetings", icon: "✝️", category: "clubs" },
-  { id: "Music Listening Club Meetings", label: "Music Listening Club Meetings", icon: "🎵", category: "clubs" },
-  { id: "Husky Wiffle Club Meeting", label: "Husky Wiffle Club Meeting", icon: "⚾", category: "clubs" },
-  { id: "Historical Fencing Meetings", label: "Historical Fencing Meetings", icon: "⚔️", category: "clubs" },
-  { id: "AIESEC Club Meetings", label: "AIESEC Club Meetings", icon: "🌍", category: "clubs" },
-  { id: "Huskies for Liberty Club Meetings", label: "Huskies for Liberty Club Meetings", icon: "🗽", category: "clubs" },
-  { id: "Huskies for Opportunities in Prison Education Club Meetings", label: "Huskies for Opportunities in Prison Education Club Meetings", icon: "📚", category: "clubs" },
-  { id: "Indigenous Students of Latin America Club Meetings", label: "Indigenous Students of Latin America Club Meetings", icon: "🌎", category: "clubs" },
-  { id: "Corporate Law & Business Association Club Meetings", label: "Corporate Law & Business Association Club Meetings", icon: "⚖️", category: "clubs" },
-  { id: "Eco-Build Club Meetings", label: "Eco-Build Club Meetings", icon: "🌱", category: "clubs" },
-  { id: "SEDS Club Meeting", label: "SEDS Club Meeting", icon: "🚀", category: "clubs" },
-  { id: "UX club meetings", label: "UX club meetings", icon: "🎨", category: "clubs" },
-  { id: "Spanish Club Meetings", label: "Spanish Club Meetings", icon: "🇪🇸", category: "clubs" },
-  
-  // University Services (categorized as clubs)
-  { id: "University District Neighborhood Farmers Market", label: "University District Neighborhood Farmers Market", icon: "🥬", category: "clubs" },
-  { id: "Study Abroad Info Sessions", label: "Study Abroad Info Sessions", icon: "✈️", category: "clubs" },
-  { id: "CLUE tutoring", label: "CLUE tutoring", icon: "📖", category: "clubs" },
-  
-  // Sports
-  { id: "Basketball", label: "Basketball", icon: "🏀", category: "sports" },
-  
-  // IMA Classes (categorized as sports)
-  { id: "IMA Electro-Cycle", label: "IMA Electro-Cycle", icon: "🚴", category: "sports" },
-  { id: "IMA Krav Maga", label: "IMA Krav Maga", icon: "🥋", category: "sports" },
-  { id: "IMA HIIT", label: "IMA HIIT", icon: "💪", category: "sports" },
-  { id: "IMA Vinyasa Yoga", label: "IMA Vinyasa Yoga", icon: "🧘", category: "sports" },
-  { id: "IMA Strength Through Yoga", label: "IMA Strength Through Yoga", icon: "🧘‍♀️", category: "sports" },
-  { id: "IMA Pilates", label: "IMA Pilates", icon: "🤸", category: "sports" },
-  { id: "IMA Deep End H2O Cardio", label: "IMA Deep End H2O Cardio", icon: "🏊", category: "sports" },
-  { id: "IMA Intro to K-Pop Dance", label: "IMA Intro to K-Pop Dance", icon: "💃", category: "sports" },
-  { id: "IMA Sunrise Yoga", label: "IMA Sunrise Yoga", icon: "🌅", category: "sports" },
-  { id: "IMA Power Yoga", label: "IMA Power Yoga", icon: "🧘‍♂️", category: "sports" },
-  { id: "IMA Fight Fit", label: "IMA Fight Fit", icon: "🥊", category: "sports" },
-  { id: "IMA All-Levels Vinyasa", label: "IMA All-Levels Vinyasa", icon: "🧘", category: "sports" },
-  { id: "IMA Sunrise Cycle", label: "IMA Sunrise Cycle", icon: "🌄", category: "sports" },
-  { id: "IMA HIIT - Lydia", label: "IMA HIIT - Lydia", icon: "💪", category: "sports" },
-  { id: "IMA Intermediate Vinyasa Yoga", label: "IMA Intermediate Vinyasa Yoga", icon: "🧘", category: "sports" },
-  { id: "IMA Yoga Sculpt", label: "IMA Yoga Sculpt", icon: "💪", category: "sports" },
-  { id: "IMA Core Crush", label: "IMA Core Crush", icon: "🔥", category: "sports" },
-  { id: "IMA Restorative Yoga", label: "IMA Restorative Yoga", icon: "🕯️", category: "sports" },
-  { id: "IMA Dance Fitness & Choreography", label: "IMA Dance Fitness & Choreography", icon: "💃", category: "sports" },
-  { id: "IMA Shallow End H2O Cardio", label: "IMA Shallow End H2O Cardio", icon: "🏊‍♀️", category: "sports" },
-  { id: "IMA Cycle Conditioning", label: "IMA Cycle Conditioning", icon: "🚴‍♂️", category: "sports" },
-  { id: "IMA Sunset Yoga", label: "IMA Sunset Yoga", icon: "🌇", category: "sports" },
-];
+// Clubs/Sports/Academics topics are fetched dynamically from Supabase (events.description)
 
 const OnboardingEvents = () => {
   const [redirectUri, setRedirectUri] = useState<string | null>(null);
@@ -82,10 +22,16 @@ const OnboardingEvents = () => {
   const [isLoadingMajors, setIsLoadingMajors] = useState(false);
   const [academics, setAcademics] = useState<AcademicEvent[]>([]);
   const [isLoadingAcademics, setIsLoadingAcademics] = useState(false);
+  const [sports, setSports] = useState<AcademicEvent[]>([]);
+  const [isLoadingSports, setIsLoadingSports] = useState(false);
+  const [clubs, setClubs] = useState<AcademicEvent[]>([]);
+  const [isLoadingClubs, setIsLoadingClubs] = useState(false);
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const hasFetchedMajors = useRef(false);
   const hasFetchedAcademics = useRef(false);
+  const hasFetchedSports = useRef(false);
+  const hasFetchedClubs = useRef(false);
   const { toast } = useToast();
 
   // Reset waitlist state when search query changes
@@ -189,26 +135,67 @@ const OnboardingEvents = () => {
     }
   }, [selectedCategory, isLoadingAcademics, academics.length, toast]);
 
-  // Filter events based on search query and category, with selected items at top
-  const filteredEvents = useMemo(() => {
-    let filtered = EVENTS;
+  // Fetch sports when sports or all category is selected
+  useEffect(() => {
+    const needsSports = selectedCategory === "sports" || selectedCategory === "all";
 
-    // Filter by category (only for non-majors categories)
-    if (selectedCategory !== "all" && selectedCategory !== "majors") {
-      filtered = filtered.filter((event) => event.category === selectedCategory);
+    if (!needsSports) {
+      return;
     }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((event) =>
-        event.label.toLowerCase().includes(query) ||
-        event.id.toLowerCase().includes(query)
-      );
+    if (!hasFetchedSports.current && !isLoadingSports && sports.length === 0) {
+      hasFetchedSports.current = true;
+      setIsLoadingSports(true);
+      fetchEventsByDescription("Sports")
+        .then((data) => {
+          console.log("Sports fetched successfully:", data);
+          setSports(data);
+          setIsLoadingSports(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching sports:", error);
+          setIsLoadingSports(false);
+          hasFetchedSports.current = false;
+          toast({
+            title: "Failed to load sports",
+            description: error.message || "Could not fetch sports events from database.",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [selectedCategory, isLoadingSports, sports.length, toast]);
+
+  // Fetch clubs when clubs or all category is selected
+  useEffect(() => {
+    const needsClubs = selectedCategory === "clubs" || selectedCategory === "all";
+
+    if (!needsClubs) {
+      return;
     }
 
-    return filtered;
-  }, [searchQuery, selectedCategory, selectedEvents]);
+    if (!hasFetchedClubs.current && !isLoadingClubs && clubs.length === 0) {
+      hasFetchedClubs.current = true;
+      setIsLoadingClubs(true);
+      fetchEventsByDescription("Clubs")
+        .then((data) => {
+          console.log("Clubs fetched successfully:", data);
+          setClubs(data);
+          setIsLoadingClubs(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching clubs:", error);
+          setIsLoadingClubs(false);
+          hasFetchedClubs.current = false;
+          toast({
+            title: "Failed to load clubs",
+            description: error.message || "Could not fetch clubs from database.",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [selectedCategory, isLoadingClubs, clubs.length, toast]);
+
+  // Note: clubs/sports lists are fetched from Supabase; no hardcoded EVENTS list remains.
 
   // Filter majors based on search query, with selected items at top
   const filteredMajors = useMemo(() => {
@@ -248,17 +235,50 @@ const OnboardingEvents = () => {
     return filtered;
   }, [academics, searchQuery, selectedCategory]);
 
+  // Filter sports based on search query
+  const filteredSports = useMemo(() => {
+    if (selectedCategory !== "sports" && selectedCategory !== "all") {
+      return [];
+    }
+
+    let filtered = sports;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((sport) =>
+        sport.topic_id.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [sports, searchQuery, selectedCategory]);
+
+  // Filter clubs based on search query
+  const filteredClubs = useMemo(() => {
+    if (selectedCategory !== "clubs" && selectedCategory !== "all") {
+      return [];
+    }
+
+    let filtered = clubs;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((club) =>
+        club.topic_id.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [clubs, searchQuery, selectedCategory]);
+
   // Helper function to get grouping/detail for events
-  const getEventGrouping = (event: Event | Major | AcademicEvent, isMajor: boolean, isAcademic: boolean = false): string => {
+  const getEventGrouping = (event: Major | AcademicEvent, isMajor: boolean, isAcademic: boolean = false): string => {
     if (isMajor) {
       return "Department";
     }
     if (isAcademic) {
       return "Academics";
     }
-    const evt = event as Event;
-    if (evt.category === "sports") return "Sports";
-    if (evt.category === "clubs") return "Clubs";
     return "Other";
   };
 
@@ -299,12 +319,23 @@ const OnboardingEvents = () => {
       });
     });
 
-    // Add regular events
-    filteredEvents.forEach((event) => {
+    // Add sports
+    filteredSports.forEach((sport) => {
       items.push({
-        id: event.id,
-        label: event.label,
-        grouping: getEventGrouping(event, false, false),
+        id: sport.topic_id,
+        label: sport.topic_id,
+        grouping: "Sports",
+        isMajor: false,
+        isAcademic: false,
+      });
+    });
+
+    // Add clubs
+    filteredClubs.forEach((club) => {
+      items.push({
+        id: club.topic_id,
+        label: club.topic_id,
+        grouping: "Clubs",
         isMajor: false,
         isAcademic: false,
       });
@@ -312,7 +343,7 @@ const OnboardingEvents = () => {
 
     // Sort alphabetically by label
     return items.sort((a, b) => a.label.localeCompare(b.label));
-  }, [filteredMajors, filteredAcademics, filteredEvents, selectedCategory]);
+  }, [filteredMajors, filteredAcademics, filteredSports, filteredClubs, selectedCategory]);
 
   // Check for redirect-url, redirect_uri, and ics_url/ics-url parameters on load
   useEffect(() => {
@@ -767,9 +798,49 @@ const OnboardingEvents = () => {
                       </motion.div>
                     );
                   }
-                  // Regular event (clubs/sports)
-                  const event = EVENTS.find((e) => e.id === eventId);
-                  if (!event) return null;
+                  // Check if it's a sports event
+                  const sport = sports.find((s) => s.topic_id === eventId);
+                  if (sport) {
+                    return (
+                      <motion.div
+                        key={eventId}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
+                      >
+                        <span className="text-foreground">{sport.topic_id}</span>
+                        <button
+                          onClick={() => toggleEvent(eventId)}
+                          className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${sport.topic_id}`}
+                        >
+                          <X className="w-4 h-4 text-foreground" />
+                        </button>
+                      </motion.div>
+                    );
+                  }
+                  // Check if it's a club event
+                  const club = clubs.find((c) => c.topic_id === eventId);
+                  if (club) {
+                    return (
+                      <motion.div
+                        key={eventId}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
+                      >
+                        <span className="text-foreground">{club.topic_id}</span>
+                        <button
+                          onClick={() => toggleEvent(eventId)}
+                          className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${club.topic_id}`}
+                        >
+                          <X className="w-4 h-4 text-foreground" />
+                        </button>
+                      </motion.div>
+                    );
+                  }
+                  // Unknown topic id - still show it (preferences may include newer topics).
                   return (
                     <motion.div
                       key={eventId}
@@ -777,11 +848,11 @@ const OnboardingEvents = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/50 rounded-full text-sm whitespace-nowrap"
                     >
-                      <span className="text-foreground">{event.label}</span>
+                      <span className="text-foreground">{eventId}</span>
                       <button
                         onClick={() => toggleEvent(eventId)}
                         className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
-                        aria-label={`Remove ${event.label}`}
+                        aria-label={`Remove ${eventId}`}
                       >
                         <X className="w-4 h-4 text-foreground" />
                       </button>
@@ -945,9 +1016,141 @@ const OnboardingEvents = () => {
                     </motion.button>
                   ))
                 )
+              ) : selectedCategory === "sports" ? (
+                // Show only sports
+                isLoadingSports ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div
+                      className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    <p className="text-muted-foreground">Loading sports...</p>
+                  </motion.div>
+                ) : filteredSports.length === 0 ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {searchQuery ? (
+                      waitlistSubmitted ? (
+                        <p className="text-primary">✓ You're on the waitlist for "{searchQuery}"</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground">
+                            Would you like to be put on the waitlist for "{searchQuery}"?
+                          </p>
+                          <motion.button
+                            onClick={handleWaitlistSubmit}
+                            disabled={isSubmittingWaitlist}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmittingWaitlist ? "Adding..." : "Yes, add me to the waitlist"}
+                          </motion.button>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-muted-foreground">No sports events available</p>
+                    )}
+                  </motion.div>
+                ) : (
+                  filteredSports.map((sport, index) => (
+                    <motion.button
+                      key={sport.id}
+                      onClick={() => toggleEvent(sport.topic_id)}
+                      className={`
+                        w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
+                        ${
+                          selectedEvents.has(sport.topic_id)
+                            ? "bg-primary/20 border-2 border-primary"
+                            : "bg-[hsl(270_30%_12%)] border-2 border-transparent hover:bg-[hsl(270_30%_15%)]"
+                        }
+                      `}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <div className="font-medium text-foreground text-sm md:text-base">{sport.topic_id}</div>
+                      <div className="text-foreground/70 text-right text-xs md:text-sm">Sports</div>
+                    </motion.button>
+                  ))
+                )
+              ) : selectedCategory === "clubs" ? (
+                // Show only clubs
+                isLoadingClubs ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div
+                      className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    <p className="text-muted-foreground">Loading clubs...</p>
+                  </motion.div>
+                ) : filteredClubs.length === 0 ? (
+                  <motion.div
+                    className="text-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {searchQuery ? (
+                      waitlistSubmitted ? (
+                        <p className="text-primary">✓ You're on the waitlist for "{searchQuery}"</p>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-muted-foreground">
+                            Would you like to be put on the waitlist for "{searchQuery}"?
+                          </p>
+                          <motion.button
+                            onClick={handleWaitlistSubmit}
+                            disabled={isSubmittingWaitlist}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmittingWaitlist ? "Adding..." : "Yes, add me to the waitlist"}
+                          </motion.button>
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-muted-foreground">No clubs available</p>
+                    )}
+                  </motion.div>
+                ) : (
+                  filteredClubs.map((club, index) => (
+                    <motion.button
+                      key={club.id}
+                      onClick={() => toggleEvent(club.topic_id)}
+                      className={`
+                        w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
+                        ${
+                          selectedEvents.has(club.topic_id)
+                            ? "bg-primary/20 border-2 border-primary"
+                            : "bg-[hsl(270_30%_12%)] border-2 border-transparent hover:bg-[hsl(270_30%_15%)]"
+                        }
+                      `}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <div className="font-medium text-foreground text-sm md:text-base">{club.topic_id}</div>
+                      <div className="text-foreground/70 text-right text-xs md:text-sm">Clubs</div>
+                    </motion.button>
+                  ))
+                )
               ) : selectedCategory === "all" ? (
                 // Show all items alphabetically sorted
-                (isLoadingMajors || isLoadingAcademics) ? (
+                (isLoadingMajors || isLoadingAcademics || isLoadingSports || isLoadingClubs) ? (
                   <motion.div
                     className="text-center py-12"
                     initial={{ opacity: 0 }}
@@ -1012,8 +1215,8 @@ const OnboardingEvents = () => {
                   ))
                 )
               ) : (
-                // Show regular events only
-                filteredEvents.length === 0 ? (
+                // Fallback - should be unreachable now that clubs/sports/academics/majors are all handled
+                allItemsSorted.length === 0 ? (
                   <motion.div
                     className="text-center py-12"
                     initial={{ opacity: 0 }}
@@ -1042,28 +1245,7 @@ const OnboardingEvents = () => {
                       <p className="text-muted-foreground">No events found</p>
                     )}
                   </motion.div>
-                ) : (
-                  filteredEvents.map((event, index) => (
-                    <motion.button
-                      key={event.id}
-                      onClick={() => toggleEvent(event.id)}
-                      className={`
-                        w-full grid grid-cols-[1fr_auto] gap-2 md:gap-4 px-3 py-3 md:px-4 md:py-4 rounded-lg transition-all text-left
-                        ${
-                          selectedEvents.has(event.id)
-                            ? "bg-primary/20 border-2 border-primary"
-                            : "bg-[hsl(270_30%_12%)] border-2 border-transparent hover:bg-[hsl(270_30%_15%)]"
-                        }
-                      `}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                    >
-                      <div className="font-medium text-foreground text-sm md:text-base">{event.label}</div>
-                      <div className="text-foreground/70 text-right text-xs md:text-sm">{getEventGrouping(event, false)}</div>
-                    </motion.button>
-                  ))
-                )
+                ) : null
               )}
             </div>
           </div>

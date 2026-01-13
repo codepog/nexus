@@ -118,7 +118,8 @@ export const fetchEventsByDescription = async (description: string): Promise<Aca
     const { data, error } = await supabase
       .from('events')
       .select('id, title, description, topic_id')
-      .eq('description', description)
+      // Use ilike to be resilient to case differences (e.g. "Sports" vs "sports")
+      .ilike('description', description)
       .order('topic_id');
 
     if (error) {
