@@ -571,7 +571,7 @@ const OnboardingEvents = () => {
 
   return (
     <div
-      className="min-h-screen text-foreground relative overflow-x-hidden"
+      className="h-screen text-foreground relative overflow-hidden flex flex-col"
       style={{
         background: `
           radial-gradient(ellipse at 0% 0%, rgba(75, 46, 131, 0.6) 0%, transparent 50%),
@@ -584,10 +584,10 @@ const OnboardingEvents = () => {
         backgroundAttachment: 'fixed',
       }}
     >
-      <div className="container max-w-4xl mx-auto px-4 py-6 md:px-6 md:py-12 relative z-10">
+      <div className="flex-1 flex flex-col min-h-0 container max-w-4xl mx-auto px-4 py-6 md:px-6 md:py-12 relative z-10">
         {/* Progress Bar/Accent at Top */}
         <motion.div
-          className="w-24 h-2 bg-primary mx-auto mb-4 md:mb-8 rounded-full"
+          className="shrink-0 w-24 h-2 bg-primary mx-auto mb-4 md:mb-8 rounded-full"
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.5 }}
@@ -595,7 +595,7 @@ const OnboardingEvents = () => {
 
         {/* Header */}
         <motion.div
-          className="text-center mb-6 md:mb-10"
+          className="shrink-0 text-center mb-6 md:mb-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
@@ -610,7 +610,7 @@ const OnboardingEvents = () => {
 
         {/* Category Filter Buttons */}
         <motion.div
-          className="mb-4 md:mb-8"
+          className="shrink-0 mb-4 md:mb-8"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -696,7 +696,7 @@ const OnboardingEvents = () => {
 
         {/* Search Bar */}
         <motion.div
-          className="mb-4 md:mb-6 flex justify-center"
+          className="shrink-0 mb-4 md:mb-6 flex justify-center"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -731,7 +731,7 @@ const OnboardingEvents = () => {
         {/* Selected Events Pills */}
         {selectedEvents.size > 0 && (
           <motion.div
-            className="mb-4 md:mb-6"
+            className="shrink-0 mb-4 md:mb-6"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
@@ -819,7 +819,7 @@ const OnboardingEvents = () => {
 
         {/* Event Selection Table */}
         <motion.div
-          className="mb-4 md:mb-8"
+          className="flex-1 min-h-0 mb-4 md:mb-8 flex flex-col"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -828,7 +828,7 @@ const OnboardingEvents = () => {
             ref={scrollContainerRef}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
-            className="max-h-[50vh] md:max-h-[350px] overflow-y-auto scrollbar-visible overscroll-contain"
+            className="flex-1 min-h-0 overflow-y-auto scrollbar-visible overscroll-contain"
           >
             {/* Table Rows */}
             <div className="space-y-2">
@@ -1093,7 +1093,7 @@ const OnboardingEvents = () => {
 
         {/* Continue Button */}
         <motion.div
-          className="mb-6 text-center"
+          className="shrink-0 mb-6 text-center"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
