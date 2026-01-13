@@ -1071,7 +1071,7 @@ const OnboardingEvents = () => {
 
         {/* Continue Button */}
         <motion.div
-          className="shrink-0 mb-6 text-center"
+          className="shrink-0 mb-4 text-center"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
