@@ -548,7 +548,7 @@ const OnboardingEvents = () => {
 
   return (
     <div
-      className="h-screen text-foreground relative overflow-hidden flex flex-col"
+      className="fixed-layout text-foreground flex flex-col"
       style={{
         background: `
           radial-gradient(ellipse at 0% 0%, rgba(75, 46, 131, 0.6) 0%, transparent 50%),
@@ -558,7 +558,6 @@ const OnboardingEvents = () => {
           radial-gradient(ellipse at 0% 100%, rgba(183, 165, 122, 0.4) 0%, transparent 45%),
           linear-gradient(135deg, #1a1025 0%, #2d1f3d 25%, #1f1a2e 50%, #2a2035 75%, #1a1025 100%)
         `,
-        backgroundAttachment: 'fixed',
       }}
     >
       <div className="flex-1 flex flex-col min-h-0 container max-w-4xl mx-auto px-4 py-6 md:px-6 md:py-12 relative z-10">
@@ -806,6 +805,7 @@ const OnboardingEvents = () => {
             style={{
               overscrollBehavior: 'contain',
               touchAction: 'pan-y',
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             {/* Table Rows */}

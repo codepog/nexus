@@ -78,6 +78,16 @@ All colors MUST be HSL.
   }
 }
 
+/* Fixed layout container - prevents body scroll on mobile */
+@layer utilities {
+  .fixed-layout {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
 /* Custom Scrollbar Styling */
 @layer utilities {
   .scrollbar-visible::-webkit-scrollbar {
