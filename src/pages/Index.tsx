@@ -494,8 +494,8 @@ const Index = () => {
           console.log("Redirecting to:", finalRedirectUrl);
           
           setTimeout(() => {
-            // Use replace so /events doesn't remain in browser history
-            window.location.replace(finalRedirectUrl);
+            // Keep /events in browser history so Back returns here
+            window.location.href = finalRedirectUrl;
           }, 1000);
           return;
         } else {
@@ -540,8 +540,8 @@ const Index = () => {
         const finalRedirectUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
-          // Use replace so /events doesn't remain in browser history
-          window.location.replace(finalRedirectUrl);
+          // Keep /events in browser history so Back returns here
+          window.location.href = finalRedirectUrl;
         }, 1000);
       } else {
         // Debug mode: show the ICS URL in the text field

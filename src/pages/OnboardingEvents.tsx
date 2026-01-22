@@ -495,8 +495,8 @@ const OnboardingEvents = () => {
           console.log("Redirecting to:", finalRedirectUrl);
           
           setTimeout(() => {
-            // Use replace so /events doesn't remain in browser history (prevents "Back" returning here)
-            window.location.replace(finalRedirectUrl);
+            // Keep /events in browser history so Back returns here
+            window.location.href = finalRedirectUrl;
           }, 1000);
           return;
         } else {
@@ -511,8 +511,8 @@ const OnboardingEvents = () => {
             : "https://app.wick.app/auth/signup?uni=uw.edu";
 
           setTimeout(() => {
-            // Use replace so /events doesn't remain in browser history
-            window.location.replace(defaultRedirect);
+            // Keep /events in browser history so Back returns here
+            window.location.href = defaultRedirect;
           }, 1000);
           return;
         }
@@ -546,8 +546,8 @@ const OnboardingEvents = () => {
         const finalRedirectUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
-          // Use replace so /events doesn't remain in browser history
-          window.location.replace(finalRedirectUrl);
+          // Keep /events in browser history so Back returns here
+          window.location.href = finalRedirectUrl;
         }, 1000);
       } else {
         // No redirect URI - use default callback with ICS URL
@@ -557,8 +557,8 @@ const OnboardingEvents = () => {
         });
 
         setTimeout(() => {
-          // Use replace so /events doesn't remain in browser history
-          window.location.replace(`https://app.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(finalIcsUrl)}`);
+          // Keep /events in browser history so Back returns here
+          window.location.href = `https://app.wick.app/auth/signup?uni=uw.edu&ics_url=${encodeURIComponent(finalIcsUrl)}`;
         }, 1000);
       }
     } catch (error: any) {

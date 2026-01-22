@@ -498,8 +498,8 @@ const TestEvents = () => {
           console.log("Redirecting to:", finalRedirectUrl);
           
           setTimeout(() => {
-            // Use replace so /events doesn't remain in browser history
-            window.location.replace(finalRedirectUrl);
+            // Keep /events in browser history so Back returns here
+            window.location.href = finalRedirectUrl;
           }, 1000);
           return;
         } else {
@@ -543,8 +543,8 @@ const TestEvents = () => {
         const finalRedirectUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
-          // Use replace so /events doesn't remain in browser history
-          window.location.replace(finalRedirectUrl);
+          // Keep /events in browser history so Back returns here
+          window.location.href = finalRedirectUrl;
         }, 1000);
       } else {
         // TEST MODE: show the ICS URL instead of redirecting
@@ -1351,8 +1351,8 @@ const TestEvents = () => {
                 size="sm"
                 onClick={() => {
                   const webcalUrl = icsUrl.replace(/^https?:/, 'webcal:');
-                  // Use replace so this action doesn't leave the current page in history
-                  window.location.replace(webcalUrl);
+                  // Keep page in history (Back returns here)
+                  window.location.href = webcalUrl;
                 }}
               >
                 Open in Calendar App
