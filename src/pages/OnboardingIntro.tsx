@@ -13,7 +13,12 @@ import calendarPreview from "@/assets/calendar-preview.png";
 const OnboardingIntro = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const redirectUri = searchParams.get("redirect_uri") || searchParams.get("redirect-url");
+  // Support canonical + legacy redirect parameter names
+  const redirectUri =
+    searchParams.get("redirect-url") ||
+    searchParams.get("redirect_url") ||
+    searchParams.get("redirect_uri") ||
+    searchParams.get("redirect-uri");
   const icsUrl = searchParams.get("ics_url") || searchParams.get("ics-url");
 
   // Build the events URL with redirect_uri and ics_url preserved
