@@ -35,9 +35,11 @@ export default async (req, res) => {
     // 1. Get the redirect-url from query parameters
     // Support multiple historical names:
     // - redirect-url (preferred)
+    // - redirect_url (legacy underscore)
     // - redirect_uri / redirect-uri (legacy)
     let redirectUrl =
       req.query['redirect-url'] ||
+      req.query['redirect_url'] ||
       req.query['redirect_uri'] ||
       req.query['redirect-uri'];
   

@@ -4,7 +4,7 @@
 Nexus Sync is a calendar synchronization service that acts as an intermediary between partner websites and users. Partner sites redirect users here to select their interests, and the app generates a personalized calendar feed URL that gets passed back to the partner site.
 
 ## Core Functionality Flow
-1. **Entry**: Users arrive with a partner callback URL (canonical: `?redirect-url=https://partner-site.com/callback`, legacy: `redirect_uri` / `redirect-uri`)
+1. **Entry**: Users arrive with a partner callback URL (canonical: `?redirect-url=https://partner-site.com/callback`, legacy: `redirect_url` / `redirect_uri` / `redirect-uri`)
 2. **Selection**: Users browse and select from:
    - Event topics from the `events` table (e.g. Clubs/Sports/Academics), fetched dynamically from Supabase
    - Departments from the `majors` table (fetched dynamically from Supabase)
@@ -45,7 +45,7 @@ Nexus Sync is a calendar synchronization service that acts as an intermediary be
 
 ### API Endpoint
 - `api/redirect/index.mjs` - Vercel serverless function that:
-  - Validates redirect URL query parameter (canonical: `redirect-url`; legacy: `redirect_uri` / `redirect-uri`)
+  - Validates redirect URL query parameter (canonical: `redirect-url`; legacy: `redirect_url` / `redirect_uri` / `redirect-uri`)
   - Handles URL encoding/decoding (supports double-encoding)
   - Appends `ics_url` parameter to redirect URI (accepts legacy input name `ics-url`)
   - Performs 302 redirect back to partner site
@@ -168,7 +168,7 @@ https://partner.com/callback?ics_url=https://[PROJECT].supabase.co/functions/v1/
 - Supports both `.ics` extension and plain token in path
 
 ### Redirect Handling
-- Supports URL-encoded and double-encoded redirect parameters (canonical: `redirect-url`; legacy: `redirect_uri` / `redirect-uri`)
+- Supports URL-encoded and double-encoded redirect parameters (canonical: `redirect-url`; legacy: `redirect_url` / `redirect_uri` / `redirect-uri`)
 - Automatically adds `https://` protocol if missing
 - Validates URL format before redirecting
 - Uses appropriate query separator (`?` or `&`) based on existing params
