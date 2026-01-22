@@ -34,6 +34,30 @@ const OnboardingEvents = () => {
   const hasFetchedClubs = useRef(false);
   const { toast } = useToast();
 
+  // If the user navigates away (redirect) and returns via Back, browsers may restore this page from BFCache
+  // including React state. Ensure the Continue button doesn't stay stuck in "Syncing...".
+  useEffect(() => {
+    const resetLoading = () => setIsLoading(false);
+
+    const onPageShow = () => {
+      resetLoading();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        resetLoading();
+      }
+    };
+
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
+
   // Reset waitlist state when search query changes
   useEffect(() => {
     setWaitlistSubmitted(false);
