@@ -351,8 +351,12 @@ const TestEvents = () => {
   // Check for redirect-url, redirect_uri, and ics_url/ics-url parameters on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Check for redirect-url first (new format), then redirect_uri (backward compatibility)
-    const uri = params.get("redirect-url") || params.get("redirect_uri");
+    // Check for redirect-url first (new format), then common legacy aliases
+    const uri =
+      params.get("redirect-url") ||
+      params.get("redirect_url") ||
+      params.get("redirect_uri") ||
+      params.get("redirect-uri");
     // Support both ics-url (hyphen) and ics_url (underscore) for compatibility
     const icsUrlParam = params.get("ics-url") || params.get("ics_url");
     
@@ -494,7 +498,8 @@ const TestEvents = () => {
           console.log("Redirecting to:", finalRedirectUrl);
           
           setTimeout(() => {
-            window.location.href = finalRedirectUrl;
+            // Use replace so /events doesn't remain in browser history
+            window.location.replace(finalRedirectUrl);
           }, 1000);
           return;
         } else {
@@ -538,7 +543,8 @@ const TestEvents = () => {
         const finalRedirectUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
-          window.location.href = finalRedirectUrl;
+          // Use replace so /events doesn't remain in browser history
+          window.location.replace(finalRedirectUrl);
         }, 1000);
       } else {
         // TEST MODE: show the ICS URL instead of redirecting
@@ -1345,7 +1351,8 @@ const TestEvents = () => {
                 size="sm"
                 onClick={() => {
                   const webcalUrl = icsUrl.replace(/^https?:/, 'webcal:');
-                  window.location.href = webcalUrl;
+                  // Use replace so this action doesn't leave the current page in history
+                  window.location.replace(webcalUrl);
                 }}
               >
                 Open in Calendar App

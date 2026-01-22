@@ -33,17 +33,39 @@ export default async (req, res) => {
     console.log('Redirect API called with query:', req.query);
     
     // 1. Get the redirect-url from query parameters
-    let redirectUrl = req.query['redirect-url'];
+    // Support multiple historical names:
+    // - redirect-url (preferred)
+    // - redirect_uri / redirect-uri (legacy)
+    let redirectUrl =
+      req.query['redirect-url'] ||
+      req.query['redirect_uri'] ||
+      req.query['redirect-uri'];
   
     // 2. Get preferences from query parameters
-    const topicIds = req.query['topic_ids'] ? 
-      (Array.isArray(req.query['topic_ids']) ? req.query['topic_ids'] : req.query['topic_ids'].split(','))
+    const topicIdsRaw = req.query['topic_ids'];
+    const majorIdsRaw = req.query['major_ids'];
+
+    const topicIds = topicIdsRaw ?
+      (Array.isArray(topicIdsRaw) ? topicIdsRaw : String(topicIdsRaw).split(','))
       : [];
-    const majorIds = req.query['major_ids'] ? 
-      (Array.isArray(req.query['major_ids']) ? req.query['major_ids'] : req.query['major_ids'].split(','))
+    const majorIds = majorIdsRaw ?
+      (Array.isArray(majorIdsRaw) ? majorIdsRaw : String(majorIdsRaw).split(','))
       : [];
     
+    // Normalize majors to match the rest of the system (major:{name})
+    const normalizedMajorTopicIds = majorIds
+      .map((m) => String(m).trim())
+      .filter(Boolean)
+      .map((m) => (m.startsWith('major:') ? m : `major:${m}`));
+    
+    const normalizedTopicIds = topicIds
+      .map((t) => String(t).trim())
+      .filter(Boolean);
+    
+    const allTopicIds = [...normalizedTopicIds, ...normalizedMajorTopicIds];
+    
     // 3. Check if ICS URL is provided directly (for backward compatibility)
+    // Prefer underscore form; accept hyphen form.
     const providedIcsUrl = req.query['ics_url'] || req.query['ics-url'];
   
     // Basic validation
@@ -62,7 +84,7 @@ export default async (req, res) => {
       icsUrl = providedIcsUrl;
     } else {
       // If no preferences are provided, set ics_url to empty string
-      if (topicIds.length === 0 && majorIds.length === 0) {
+      if (allTopicIds.length === 0) {
         icsUrl = '';
       } else {
         // Get Supabase credentials from environment variables
@@ -83,23 +105,21 @@ export default async (req, res) => {
         // Generate a unique UUID for the user token
         const userToken = uuidv4();
 
-        // Save preferences to Supabase (only if topic_ids are provided)
-        if (topicIds.length > 0) {
-          const { error: insertError } = await supabase
-            .from('feed_preferences')
-            .insert({
-              user_token: userToken,
-              topic_id: topicIds,
-            });
+        // Save preferences to Supabase (topics + majors) so everything is represented by the ICS URL token
+        const { error: insertError } = await supabase
+          .from('feed_preferences')
+          .insert({
+            user_token: userToken,
+            topic_id: allTopicIds,
+          });
 
-          if (insertError) {
-            console.error('Error saving preferences to Supabase:', insertError);
-            res.status(500).json({ 
-              error: 'Failed to save preferences',
-              message: insertError.message 
-            });
-            return;
-          }
+        if (insertError) {
+          console.error('Error saving preferences to Supabase:', insertError);
+          res.status(500).json({ 
+            error: 'Failed to save preferences',
+            message: insertError.message 
+          });
+          return;
         }
 
         // Construct the ICS URL
@@ -136,6 +156,7 @@ export default async (req, res) => {
 
     // 7. Construct the final URL with ICS URL appended
     const separator = redirectUrl.includes('?') ? '&' : '?';
+    // Always emit underscore form: ics_url
     // If icsUrl is empty, still include the parameter but with empty value
     const finalUrl = `${redirectUrl}${separator}ics_url=${icsUrl ? encodeURIComponent(icsUrl) : ''}`;
     

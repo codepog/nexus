@@ -348,8 +348,12 @@ const Index = () => {
   // Check for redirect-url, redirect_uri, and ics_url parameters on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Check for redirect-url first (new format), then redirect_uri (backward compatibility)
-    const uri = params.get("redirect-url") || params.get("redirect_uri");
+    // Check for redirect-url first (new format), then common legacy aliases
+    const uri =
+      params.get("redirect-url") ||
+      params.get("redirect_url") ||
+      params.get("redirect_uri") ||
+      params.get("redirect-uri");
     const icsUrlParam = params.get("ics_url");
     
     console.log("URL Parameters:", { uri, icsUrlParam, allParams: Object.fromEntries(params) });
@@ -490,7 +494,8 @@ const Index = () => {
           console.log("Redirecting to:", finalRedirectUrl);
           
           setTimeout(() => {
-            window.location.href = finalRedirectUrl;
+            // Use replace so /events doesn't remain in browser history
+            window.location.replace(finalRedirectUrl);
           }, 1000);
           return;
         } else {
@@ -535,7 +540,8 @@ const Index = () => {
         const finalRedirectUrl = `${redirectUri}${separator}ics_url=${encodeURIComponent(finalIcsUrl)}`;
         
         setTimeout(() => {
-          window.location.href = finalRedirectUrl;
+          // Use replace so /events doesn't remain in browser history
+          window.location.replace(finalRedirectUrl);
         }, 1000);
       } else {
         // Debug mode: show the ICS URL in the text field

@@ -4,9 +4,9 @@
 Nexus Sync is a calendar synchronization service that acts as an intermediary between partner websites and users. Partner sites redirect users here to select their interests, and the app generates a personalized calendar feed URL that gets passed back to the partner site.
 
 ## Core Functionality Flow
-1. **Entry**: Users arrive with `?redirect_uri=https://partner-site.com/callback` query parameter
+1. **Entry**: Users arrive with a partner callback URL (canonical: `?redirect-url=https://partner-site.com/callback`, legacy: `redirect_uri` / `redirect-uri`)
 2. **Selection**: Users browse and select from:
-   - Pre-defined events/clubs/IMA classes (categorized as Sports or Clubs)
+   - Event topics from the `events` table (e.g. Clubs/Sports/Academics), fetched dynamically from Supabase
    - Departments from the `majors` table (fetched dynamically from Supabase)
    - Selected items automatically move to the top of their list for easy visibility
 3. **Processing**: Selected preferences are saved to Supabase, generating a unique UUID token
@@ -32,7 +32,9 @@ Nexus Sync is a calendar synchronization service that acts as an intermediary be
 ### Frontend Entry Points
 - `src/main.tsx` - React app entry point
 - `src/App.tsx` - Main app component with routing setup
-- `src/pages/Index.tsx` - **Main user interface** where users select events
+- `src/pages/OnboardingIntro.tsx` - Intro/entry page that preserves redirect params and routes into event selection
+- `src/pages/OnboardingEvents.tsx` - **Main user interface** where users select topics/departments and generate an `ics_url`
+- `src/pages/TestEvents.tsx` - Testing-only UI variant (kept separate from production flow)
 
 ### Core Business Logic
 - `src/utils/supabaseService.ts` - Handles:
@@ -42,12 +44,12 @@ Nexus Sync is a calendar synchronization service that acts as an intermediary be
   - Constructing ICS feed URLs: `https://[PROJECT].supabase.co/functions/v1/user-feed/{token}.ics`
 
 ### API Endpoint
-- `api/redirect.js` - Vercel serverless function that:
-  - Validates `redirect-uri` query parameter
+- `api/redirect/index.mjs` - Vercel serverless function that:
+  - Validates redirect URL query parameter (canonical: `redirect-url`; legacy: `redirect_uri` / `redirect-uri`)
   - Handles URL encoding/decoding (supports double-encoding)
-  - Appends `ics-url` parameter to redirect URI
+  - Appends `ics_url` parameter to redirect URI (accepts legacy input name `ics-url`)
   - Performs 302 redirect back to partner site
-  - Falls back to `ICS_BASE_URL` env var if `ics-url` not in query params
+  - If no topics/majors are provided, still includes `ics_url=` with an empty value
 
 ### Backend Function
 - `supabase/functions/user-feed/index.ts` - Supabase Edge Function (Deno) that:
@@ -87,7 +89,7 @@ Nexus Sync is a calendar synchronization service that acts as an intermediary be
 - `description` (text, optional)
 - `start_time` (timestamptz) - Can be null for TBD events
 - `end_time` (timestamptz, optional)
-- `topic_id` (text) - **Must match IDs in Index.tsx EVENTS array**
+- `topic_id` (text) - Topic key stored in `feed_preferences.topic_id` and used to fetch events for the ICS feed
 - `location` (text, optional)
 - `recurrence_frequency` (text) - "DAILY", "WEEKLY", "MONTHLY", "YEARLY"
 - `recurrence_until` (text) - ISO date string
@@ -101,15 +103,10 @@ Nexus Sync is a calendar synchronization service that acts as an intermediary be
 - **Note**: Despite the table name "majors", it represents departments in the UI
 
 ## Event Data
-
-### Hardcoded Events
-The app has 63 hardcoded events in `src/pages/Index.tsx`, categorized as:
-- **Clubs**: Thucydides Society, Women in Consulting, League of Astronomers, etc. (category: "clubs")
-- **University Services**: Farmers Market, Study Abroad, CLUE tutoring (category: "clubs")
-- **Sports**: Basketball (category: "sports")
-- **IMA Classes**: Electro-Cycle, Krav Maga, HIIT, Yoga variants, etc. (category: "sports")
-
-**Critical**: The `id` field in the EVENTS array must exactly match `topic_id` values in the database.
+### Topics (Clubs / Sports / Academics)
+- Topics shown in the UI are fetched dynamically from the `events` table in Supabase.
+- The UI queries by `events.description` (e.g. "Clubs", "Sports", "Academics") and displays unique `topic_id` values.
+- Selected topics are stored in `feed_preferences.topic_id` as strings that match `events.topic_id`.
 
 ### Dynamic Departments
 - Departments are fetched dynamically from the `majors` table in Supabase
@@ -132,13 +129,12 @@ Users can filter events by category:
 ## Environment Variables
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `ICS_BASE_URL` - Fallback ICS URL (optional, for redirect.js)
 
 ## URL Patterns
 
 ### User Entry
 ```
-https://nexus-sync.com/?redirect_uri=https://partner.com/callback
+https://nexus-sync.com/?redirect-url=https://partner.com/callback
 ```
 
 ### ICS Feed URL
@@ -148,12 +144,12 @@ https://[PROJECT_REF].supabase.co/functions/v1/user-feed/{token}.ics
 
 ### Redirect API Call
 ```
-/api/redirect?redirect-uri=https://partner.com/callback&ics-url=https://...
+/api/redirect?redirect-url=https://partner.com/callback&ics_url=https://...
 ```
 
 ### Final Redirect (back to partner)
 ```
-https://partner.com/callback?ics-url=https://[PROJECT].supabase.co/functions/v1/user-feed/{token}.ics
+https://partner.com/callback?ics_url=https://[PROJECT].supabase.co/functions/v1/user-feed/{token}.ics
 ```
 
 ## Key Implementation Details
@@ -172,7 +168,7 @@ https://partner.com/callback?ics-url=https://[PROJECT].supabase.co/functions/v1/
 - Supports both `.ics` extension and plain token in path
 
 ### Redirect Handling
-- Supports URL-encoded and double-encoded `redirect-uri` parameters
+- Supports URL-encoded and double-encoded redirect parameters (canonical: `redirect-url`; legacy: `redirect_uri` / `redirect-uri`)
 - Automatically adds `https://` protocol if missing
 - Validates URL format before redirecting
 - Uses appropriate query separator (`?` or `&`) based on existing params
@@ -226,9 +222,9 @@ The user-feed function includes robust ICS parsing capabilities:
 - Includes comprehensive error logging for debugging
 
 ## Important Notes
-- The redirect endpoint is a Vercel serverless function (CommonJS format)
+- The redirect endpoint is a Vercel serverless function (`api/redirect/index.mjs`)
 - The Supabase function is a Deno Edge Function (ES modules)
-- Event IDs in the frontend must exactly match database `topic_id` values
+- Topic IDs stored in `feed_preferences.topic_id` must exactly match `events.topic_id` values
 - The app supports both production (with redirect) and debug (no redirect) modes
 - ICS generation handles edge cases: all-day events, TBD times, recurrence rules, NULL values
 - Departments require RLS policy: `CREATE POLICY "Allow public read access" ON majors FOR SELECT TO public USING (true);`
