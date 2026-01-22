@@ -21,10 +21,12 @@ const OnboardingIntro = () => {
     searchParams.get("redirect-uri");
   const icsUrl = searchParams.get("ics_url") || searchParams.get("ics-url");
 
-  // Build the events URL with redirect_uri and ics_url preserved
+  // Build the events URL with redirect_url and ics_url preserved
   const buildEventsUrl = () => {
     const params = new URLSearchParams();
-    if (redirectUri) params.set("redirect_uri", redirectUri);
+    // Preserve redirect_url so /events can round-trip the partner callback.
+    // (Other pages accept multiple aliases, but this keeps the URL consistent with current entry.)
+    if (redirectUri) params.set("redirect_url", redirectUri);
     if (icsUrl) params.set("ics_url", icsUrl);
     const queryString = params.toString();
     return queryString ? `/events?${queryString}` : "/events";
